@@ -121,3 +121,7 @@ public/uploads/
 *.sqlite
 *.sqlite3
 *.db
+
+
+# txt files
+*.txt
