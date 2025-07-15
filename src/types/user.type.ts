@@ -1,4 +1,4 @@
-import { Schema, Document } from "mongoose";
+import { Document } from "mongoose";
 
 // Type for creating a new user (only the schema fields)
 export interface ICreateUser {
@@ -19,6 +19,49 @@ export interface IUser extends Document {
 	googleId?: string;
 	avatar?: string;
 	role: "tenant" | "landlord" | "admin";
+	phoneNumber?: string;
+	isVerified: boolean;
+	verificationToken?: string;
+	verificationTokenExpiresAt?: Date;
+	resetPasswordToken?: string;
+	resetPasswordTokenExpiresAt?: Date;
+
+	//Role specific fields
+
+	//Landlord profile
+	landlordProfile?: {
+		businessName?: string;
+		licenseNumber?: string;
+		rating?: number;
+		totalReviews?: number;
+		totalProperties?: number;
+		isVerifiedLandlord?: boolean;
+	};
+
+	//Tenant profile
+	tenantProfile?: {
+		occupation?: string;
+		monthlyIncome?: number;
+		emergencyContact?: {
+			name?: string;
+			phoneNumber?: string;
+			relationship?: string;
+		};
+		preferences?: {
+			priceRange?: {
+				min?: number;
+				max?: number;
+			};
+			preferredLocation?: string[];
+			amenities?: string[];
+			petFriendly?: boolean;
+		};
+	};
+
+	//Activity tracking
+	lastActive?: Date;
+	isOnline?: boolean;
+
 	createdAt: Date;
 	updatedAt: Date;
 

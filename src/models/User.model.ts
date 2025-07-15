@@ -39,6 +39,111 @@ const userSchema = new Schema<IUser>(
 			},
 			default: "tenant",
 		},
+		phoneNumber: {
+			type: String,
+			trim: true,
+		},
+		isVerified: {
+			type: Boolean,
+			default: false,
+		},
+		verificationToken: {
+			type: String,
+			select: false,
+		},
+		verificationTokenExpiresAt: {
+			type: Date,
+			select: false,
+		},
+		resetPasswordToken: {
+			type: String,
+			select: false,
+		},
+		resetPasswordTokenExpiresAt: {
+			type: Date,
+			select: false,
+		},
+
+		//Role specific fields
+		landlordProfile: {
+			businessName: {
+				type: String,
+				trim: true,
+			},
+			licenseNumber: {
+				type: String,
+				trim: true,
+			},
+			rating: {
+				type: Number,
+				default: 0,
+				min: 0,
+				max: 5,
+			},
+			totalReviews: {
+				type: Number,
+				default: 0,
+			},
+			totalProperties: {
+				type: Number,
+				default: 0,
+			},
+			isVerifiedLandlord: {
+				type: Boolean,
+				default: false,
+			},
+		},
+		tenantProfile: {
+			occupation: {
+				type: String,
+				trim: true,
+			},
+			monthlyIncome: {
+				type: Number,
+				min: 0,
+			},
+			emergencyContact: {
+				name: {
+					type: String,
+					trim: true,
+				},
+				phoneNumber: {
+					type: String,
+					trim: true,
+				},
+				relationship: {
+					type: String,
+				},
+			},
+			preferences: {
+				priceRange: {
+					min: {
+						type: Number,
+						min: 0,
+					},
+					max: {
+						type: Number,
+						min: 0,
+					},
+				},
+				preferredLocation: [String],
+				amenities: [String],
+				petFriendly: {
+					type: Boolean,
+					default: false,
+				},
+			},
+		},
+
+		//Activity tracking
+		lastActive: {
+			type: Date,
+			default: Date.now,
+		},
+		isOnline: {
+			type: Boolean,
+			default: false,
+		},
 	},
 	{
 		timestamps: true,
@@ -101,6 +206,9 @@ userSchema.methods.toJSON = function () {
 userSchema.statics.findByCredentials = async function (email: string) {
 	return this.findOne({ email }).select("+password");
 };
+
+//TODO: Add methods for tenant and landlord profiles
+//TODO: Add methods for verification and password reset
 
 const User = model<IUser>("User", userSchema);
 

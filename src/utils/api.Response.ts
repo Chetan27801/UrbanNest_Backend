@@ -1,6 +1,6 @@
 import { CustomError } from "../middleware/error.middleware";
 
-const createError = (
+export const createError = (
 	message: string,
 	statusCode: number,
 	stack?: string
@@ -10,5 +10,3 @@ const createError = (
 	err.stack = stack;
 	return err;
 };
-
-export default createError;

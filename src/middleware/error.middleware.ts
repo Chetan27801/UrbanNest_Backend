@@ -52,7 +52,6 @@ const errorMiddleware = (
 			...(process.env.NODE_ENV === "development" && {
 				stack,
 				statusCode,
-				details: err,
 			}),
 		},
 	});

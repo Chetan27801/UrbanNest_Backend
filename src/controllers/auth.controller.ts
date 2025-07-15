@@ -3,7 +3,7 @@ import { generateToken } from "../utils/jwt_token";
 import { createUser, findUserByEmail } from "../services/auth.services";
 import { IUserWithPassword } from "../types/user.type";
 import passport from "../config/passport";
-import createError from "../utils/createError";
+import { createError } from "../utils/api.Response";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {

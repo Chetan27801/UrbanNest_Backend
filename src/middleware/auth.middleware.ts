@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { IUser } from "../types/user.type";
 
 import jwt from "jsonwebtoken";
-import createError from "../utils/createError";
+import { createError } from "../utils/api.Response";
 
 const authMiddleware = (allowedRoles: string[] = []) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
