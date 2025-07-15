@@ -1,0 +1,36 @@
+import { Request, Response, NextFunction } from "express";
+import { IUser } from "../types/user.type";
+
+import jwt from "jsonwebtoken";
+import createError from "../utils/createError";
+
+const authMiddleware = (allowedRoles: string[] = []) => {
+	return async (req: Request, res: Response, next: NextFunction) => {
+		try {
+			const token = req.headers.authorization?.split(" ")[1];
+			if (!token) {
+				return next(createError("Unauthorized", 401));
+			}
+
+			const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+
+			//Role verification
+			const userRole = (decoded as IUser).role.toLowerCase();
+
+			const hasAccess =
+				allowedRoles.length === 0 || allowedRoles.includes(userRole);
+			if (!hasAccess) {
+				return next(createError("Access denied", 403));
+			}
+
+			//Add user to request object
+			req.user = decoded as IUser;
+		} catch (error) {
+			return next(createError("Invalid token", 400));
+		}
+
+		next();
+	};
+};
+
+export default authMiddleware;
