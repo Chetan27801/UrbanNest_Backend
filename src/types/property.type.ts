@@ -1,60 +1,65 @@
 import { Document, Types } from "mongoose";
+import { Amenity, Highlight, PropertyType } from "./enums";
+
+export interface ILocation {
+	address: string;
+	city: string;
+	state: string;
+	country: string;
+	postalCode: string;
+	coordinates: {
+		type: "Point";
+		coordinates: [number, number]; // [longitude, latitude]
+	};
+}
 
 export interface IProperty extends Document {
-	title: string;
+	_id: string;
+	name: string;
 	description: string;
-	landlord: Types.ObjectId;
-	location: {
-		address: string;
-		city: string;
-		state: string;
-		country: string;
-		coordinates: [number, number];
-	};
-	pricing: {
-		rent: number;
-		deposit: number;
-		leaseTerm: number;
-	};
-	specifications: {
-		bedrooms: number;
-		bathrooms: number;
-		area: number;
-		propertyType: string;
-		furnished: boolean;
-		yearBuilt: number;
-		floorNumber: number;
-		floorPlan: string;
-		totalFloors: number;
-		hasElevator: boolean;
-	};
-	amenities: string[];
-	highlights: string[];
-	policies: {
-		petsAllowed: boolean;
-		smokingAllowed: boolean;
-		minimumLeaseTerm: number;
-		maximumLeaseTerm: number;
-	};
-	media: {
-		images: {
-			url: string;
-			caption: string;
-			isPrimary: boolean;
-		}[];
-	};
-	availability: {
-		isAvailable: boolean;
-		availableFrom: Date;
-		availableTo: Date;
-	};
-	stats: {
-		views: number;
-		saves: number;
-	};
-	rating: {
-		average: number;
-		count: number;
-	};
-	status: string;
+	pricePerMonth: number;
+	securityDeposit: number;
+	applicationFee: number;
+	photoUrls: string[];
+	amenities: Amenity[];
+	highlights: Highlight[];
+	isPetsAllowed: boolean;
+	isParkingIncluded: boolean;
+	beds: number;
+	baths: number;
+	squareFeet: number;
+	propertyType: PropertyType;
+	postedDate: Date;
+	averageRating?: number;
+	numberOfReviews?: number;
+	location: ILocation;
+	landlord: Types.ObjectId; // Reference to User with role 'landlord'
+
+	// Virtual fields that will be populated
+	applications?: Types.ObjectId[];
+	leases?: Types.ObjectId[];
+	favoritedBy?: Types.ObjectId[];
+
+	isAvailable: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface ICreateProperty {
+	name: string;
+	description: string;
+	pricePerMonth: number;
+	securityDeposit: number;
+	applicationFee: number;
+	photoUrls?: string[];
+	amenities: Amenity[];
+	highlights: Highlight[];
+	isPetsAllowed?: boolean;
+	isParkingIncluded?: boolean;
+	beds: number;
+	baths: number;
+	squareFeet: number;
+	propertyType: PropertyType;
+	location: ILocation;
+	landlord: string;
 }

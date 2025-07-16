@@ -6,9 +6,12 @@ import express from "express";
 import connectDB from "./config/database";
 import passport from "./config/passport";
 
+//Middleware imports
+import errorMiddleware from "./middleware/error.middleware";
+
 //Routes imports
 import authRouter from "./routes/auth.routes";
-import errorMiddleware from "./middleware/error.middleware";
+import propertyRouter from "./routes/property.routes";
 
 const app = express();
 app.use(express.json());
@@ -25,6 +28,7 @@ app.get("/test", (req, res) => {
 
 //Routes
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/properties", propertyRouter);
 
 //Error handling middleware
 app.use(errorMiddleware);
