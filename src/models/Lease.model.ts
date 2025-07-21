@@ -5,7 +5,7 @@ const leaseSchema = new Schema<ILease>(
 	{
 		startDate: {
 			type: Date,
-			required: [true, "Start date is required"],
+			required: [true, "Start date is required"], 
 		},
 		endDate: {
 			type: Date,
@@ -36,6 +36,11 @@ const leaseSchema = new Schema<ILease>(
 			type: Schema.Types.ObjectId,
 			ref: "User",
 			required: [true, "Tenant is required"],
+		},
+		landlord: {
+			type: Schema.Types.ObjectId,
+			ref: "User",
+			required: [true, "Landlord is required"],
 		},
 		application: {
 			type: Schema.Types.ObjectId,

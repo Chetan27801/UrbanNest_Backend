@@ -62,9 +62,188 @@ export const createPropertySchema = z.object({
 	propertyType: z.enum(getEnumValues(PropertyType) as [string, ...string[]]),
 	location: locationSchema,
 	landlord: z.string().min(1, "Landlord is required"),
+	isAvailable: z.boolean().default(true),
 });
 
 export const updatePropertySchema = createPropertySchema.partial();
 
+//using both union and transform to handle both string and number values as postman automatically converts string to number when sending request
+export const searchPropertySchema = z.object({
+	//pagination
+	page: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return 1;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+	limit: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return 10;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+
+	//sorting
+	sortBy: z
+		.enum(["pricePerMonth", "postedAt", "averageRating", "squareFeet"])
+		.optional(),
+	sortOrder: z.enum(["asc", "desc"]).optional(),
+
+	//search
+	search: z.string().optional(),
+
+	//pricing filters
+	minPrice: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+	maxPrice: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+
+	//property filters
+	propertyType: z
+		.enum(getEnumValues(PropertyType) as [string, ...string[]])
+		.optional(),
+
+	//property details filters
+	beds: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+	baths: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+	minSquareFeet: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+	maxSquareFeet: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseInt(val) : val;
+		}),
+
+	//location filters
+	city: z.string().optional(),
+	state: z.string().optional(),
+	lat: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseFloat(val) : val;
+		}),
+	lng: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseFloat(val) : val;
+		}),
+	radius: z
+		.union([z.string(), z.number()])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return typeof val === "string" ? parseFloat(val) : val;
+		}),
+
+	//common amenity filters
+	hasPool: z
+		.union([z.string(), z.boolean()])
+		.optional()
+		.transform((val) => {
+			if (val === undefined) return undefined;
+			return typeof val === "string" ? val === "true" : val;
+		}),
+	hasGym: z
+		.union([z.string(), z.boolean()])
+		.optional()
+		.transform((val) => {
+			if (val === undefined) return undefined;
+			return typeof val === "string" ? val === "true" : val;
+		}),
+	hasParking: z
+		.union([z.string(), z.boolean()])
+		.optional()
+		.transform((val) => {
+			if (val === undefined) return undefined;
+			return typeof val === "string" ? val === "true" : val;
+		}),
+	hasPetFriendly: z
+		.union([z.string(), z.boolean()])
+		.optional()
+		.transform((val) => {
+			if (val === undefined) return undefined;
+			return typeof val === "string" ? val === "true" : val;
+		}),
+	hasWifi: z
+		.union([z.string(), z.boolean()])
+		.optional()
+		.transform((val) => {
+			if (val === undefined) return undefined;
+			return typeof val === "string" ? val === "true" : val;
+		}),
+	hasCable: z
+		.union([z.string(), z.boolean()])
+		.optional()
+		.transform((val) => {
+			if (val === undefined) return undefined;
+			return typeof val === "string" ? val === "true" : val;
+		}),
+	hasDishwasher: z
+		.union([z.string(), z.boolean()])
+		.optional()
+		.transform((val) => {
+			if (val === undefined) return undefined;
+			return typeof val === "string" ? val === "true" : val;
+		}),
+
+	//advanced filters
+	amenities: z
+		.union([
+			z.array(z.enum(getEnumValues(Amenity) as [string, ...string[]])),
+			z.string(),
+		])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return Array.isArray(val) ? val : [val];
+		}),
+	highlights: z
+		.union([
+			z.array(z.enum(getEnumValues(Highlight) as [string, ...string[]])),
+			z.string(),
+		])
+		.optional()
+		.transform((val) => {
+			if (!val) return undefined;
+			return Array.isArray(val) ? val : [val];
+		}),
+});
+
 export type CreatePropertyType = z.infer<typeof createPropertySchema>;
 export type UpdatePropertyType = z.infer<typeof updatePropertySchema>;
+export type SearchPropertyType = z.infer<typeof searchPropertySchema>;

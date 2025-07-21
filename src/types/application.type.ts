@@ -7,9 +7,6 @@ export interface IApplication extends Document {
 	status: ApplicationStatus;
 	property: Types.ObjectId;
 	tenant: Types.ObjectId;
-	applicantName: string;
-	applicantEmail: string;
-	applicantPhone: string;
 	message?: string;
 	lease?: Types.ObjectId;
 	createdAt: Date;
@@ -19,8 +16,5 @@ export interface IApplication extends Document {
 export interface ICreateApplication {
 	property: string;
 	tenant: string;
-	applicantName: string;
-	applicantEmail: string;
-	applicantPhone: string;
 	message?: string;
 }

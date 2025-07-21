@@ -8,6 +8,7 @@ export interface ILease extends Document {
 	deposit: number;
 	property: Types.ObjectId;
 	tenant: Types.ObjectId;
+	landlord: Types.ObjectId;
 	application?: Types.ObjectId;
 	isActive: boolean;
 	createdAt: Date;
@@ -21,5 +22,6 @@ export interface ICreateLease {
 	deposit: number;
 	property: string;
 	tenant: string;
+	landlord: string;
 	application?: string;
 }

@@ -41,6 +41,7 @@ export interface IProperty extends Document {
 	favoritedBy?: Types.ObjectId[];
 
 	isAvailable: boolean;
+	minLeaseTerm: number;
 	createdAt: Date;
 	updatedAt: Date;
 }

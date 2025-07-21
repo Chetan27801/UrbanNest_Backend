@@ -24,7 +24,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 			return next(createError("Invalid credentials", 401));
 		}
 
-		const token = generateToken(user._id.toString());
+		const token = generateToken(user._id.toString(), user.role);
 
 		return res.status(200).json({ token });
 	} catch (error) {
@@ -48,7 +48,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
 		}
 
 		const newUser = await createUser(userData);
-		const token = generateToken(newUser._id.toString());
+		const token = generateToken(newUser._id.toString(), newUser.role);
 
 		return res.status(201).json({ token });
 	} catch (error) {
@@ -78,7 +78,7 @@ const googleAuthCallback = async (
 		}
 
 		try {
-			const token = generateToken(user._id.toString());
+			const token = generateToken(user._id.toString(), user.role);
 			return res.status(200).json({ token });
 		} catch (error) {
 			return next(createError("Internal server error", 500));

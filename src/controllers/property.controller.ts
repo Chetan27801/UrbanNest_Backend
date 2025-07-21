@@ -3,8 +3,9 @@ import { createError } from "../utils/api.Response";
 
 //Schema
 import {
-	CreatePropertyType,
+	CreatePropertyType,	
 	UpdatePropertyType,
+	searchPropertySchema,
 } from "../schema/property.schema";
 
 //Services
@@ -14,16 +15,24 @@ import {
 	getPropertyById as getPropertyByIdService,
 	updateProperty as updatePropertyService,
 	deleteProperty as deletePropertyService,
+	searchProperty as searchPropertyService,
 } from "../services/property.services";
-import { success } from "zod/v4";
+import { IUser } from "../types/user.type";
 
+//--------------------------------Controllers--------------------------------
+
+//--------------------------------Create Property--------------------------------
 export const createProperty = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
 ) => {
 	try {
-		const property: CreatePropertyType = req.body;
+		const user = req.user as IUser;
+		const property: CreatePropertyType = {
+			...req.body,
+			landlord: user._id,
+		};
 
 		const newProperty = await createPropertyService(property);
 
@@ -32,13 +41,26 @@ export const createProperty = async (
 		return next(createError("Internal server error", 500));
 	}
 };
+
+//--------------------------------Get All Properties--------------------------------
 export const getAllProperties = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
 ) => {
 	try {
-		const properties = await getAllPropertiesService();
+		let query = {};
+
+		const user = req.user as IUser;
+
+		//If user is landlord, only fetch properties that belong to them
+		if (user.role === "landlord") {
+			query = {
+				landlord: user._id,
+			};
+		}
+		const properties = await getAllPropertiesService(query);
+
 		return res.status(200).json({
 			success: true,
 			message: "Properties fetched successfully",
@@ -48,14 +70,25 @@ export const getAllProperties = async (
 		return next(createError("Internal server error", 500));
 	}
 };
+
+//--------------------------------Get Property By Id--------------------------------
 export const getPropertyById = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
 ) => {
 	try {
-		const { id } = req.params;
-		const property = await getPropertyByIdService(id);
+		const user = req.user as IUser;
+
+		let query: any = { _id: req.params.id };
+
+		//If user is landlord, only fetch properties that belong to them
+		if (user && user.role === "landlord") {
+			query.landlord = user._id;
+		}
+
+		const property = await getPropertyByIdService(query);
+
 		return res.status(200).json({
 			success: true,
 			message: "Property fetched successfully",
@@ -65,6 +98,8 @@ export const getPropertyById = async (
 		return next(createError("Internal server error", 500));
 	}
 };
+
+//--------------------------------Update Property--------------------------------
 export const updateProperty = async (
 	req: Request,
 	res: Response,
@@ -72,8 +107,13 @@ export const updateProperty = async (
 ) => {
 	try {
 		const { id } = req.params;
+
+		const user = req.user as IUser;
+		const query: any = { _id: id, landlord: user._id };
+
 		const propertyData: UpdatePropertyType = req.body;
-		const updatedProperty = await updatePropertyService(id, propertyData);
+
+		const updatedProperty = await updatePropertyService(query, propertyData);
 
 		return res.status(200).json({
 			success: true,
@@ -84,6 +124,8 @@ export const updateProperty = async (
 		return next(createError("Internal server error", 500));
 	}
 };
+
+//--------------------------------Delete Property--------------------------------
 export const deleteProperty = async (
 	req: Request,
 	res: Response,
@@ -91,12 +133,79 @@ export const deleteProperty = async (
 ) => {
 	try {
 		const { id } = req.params;
-		await deletePropertyService(id);
+		const user = req.user as IUser;
+		const query: any = { _id: id, landlord: user._id };
+
+		await deletePropertyService(query);
 		return res.status(200).json({
 			success: true,
 			message: "Property deleted successfully",
 		});
 	} catch (error) {
 		return next(createError("Internal server error", 500));
+	}
+};
+
+//--------------------------------Search Property--------------------------------
+export const searchProperty = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const filters = searchPropertySchema.parse(req.query);
+
+		const result = await searchPropertyService(filters);
+
+		return res.status(200).json({
+			success: true,
+			message: "Properties fetched successfully",
+			data: result,
+			pagination: result.pagination,
+			appliedFilters: result.appliedFilters,
+		});
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
+//--------------------------------AI Search--------------------------------
+//TODO: AI Search implementation with Perplexity API
+export const aiSearch = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
+
+
+
+
+
+
+//TODO: Upload image to S3 bucket
+export const uploadImage = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const image = req.file;
+		if (!image) {
+			return next(createError("No image provided", 400));
+		}
+		// const imageUrl = await uploadImageToS3(image);
+		return res.status(200).json({
+			success: true,
+			message: "Image uploaded successfully",
+			data: req.file,
+		});
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
 	}
 };

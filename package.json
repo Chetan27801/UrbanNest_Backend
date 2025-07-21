@@ -10,7 +10,10 @@
 		"dev": "nodemon --exec ts-node src/index.ts",
 		"lint": "eslint . --ext .ts",
 		"test": "jest",
-		"test:watch": "jest --watch"
+		"test:watch": "jest --watch",
+		"import-data": "ts-node import-data.ts",
+		"import-data:import": "ts-node import-data.ts --import",
+		"import-data:delete": "ts-node import-data.ts --delete"
 	},
 	"keywords": [],
 	"author": "",

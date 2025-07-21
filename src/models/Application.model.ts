@@ -26,22 +26,6 @@ const applicationSchema = new Schema<IApplication>(
 			ref: "User",
 			required: [true, "Tenant is required"],
 		},
-		applicantName: {
-			type: String,
-			required: [true, "Applicant name is required"],
-			trim: true,
-		},
-		applicantEmail: {
-			type: String,
-			required: [true, "Applicant email is required"],
-			trim: true,
-			lowercase: true,
-		},
-		applicantPhone: {
-			type: String,
-			required: [true, "Applicant phone is required"],
-			trim: true,
-		},
 		message: {
 			type: String,
 			trim: true,

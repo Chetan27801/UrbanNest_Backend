@@ -164,10 +164,17 @@ const propertySchema = new Schema<IProperty>(
 			type: Boolean,
 			default: true,
 		},
+		minLeaseTerm: {
+			type: Number,
+			min: [1, "Minimum lease term must be at least 1 month"],
+			default: 12,
+			required: [true, "Minimum lease term is required"],
+		},
 	},
 	{
 		timestamps: true,
 		versionKey: false,
+		id: false,
 	}
 );
 

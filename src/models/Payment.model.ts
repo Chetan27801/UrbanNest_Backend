@@ -15,11 +15,11 @@ const paymentSchema = new Schema<IPayment>(
 			default: 0,
 			min: [0, "Amount paid cannot be negative"],
 		},
-		dueDate: {
+		dueDate: { //on which date payment is due
 			type: Date,
 			required: [true, "Due date is required"],
 		},
-		paymentDate: {
+		paymentDate: { //on which date payment is made
 			type: Date,
 		},
 		paymentStatus: {

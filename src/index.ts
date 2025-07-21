@@ -12,6 +12,10 @@ import errorMiddleware from "./middleware/error.middleware";
 //Routes imports
 import authRouter from "./routes/auth.routes";
 import propertyRouter from "./routes/property.routes";
+import statsRouter from "./routes/stats.routes";
+import paymentRouter from "./routes/payment.routes";
+import leaseRouter from "./routes/lease.routes";
+import applicationRouter from "./routes/application.routes";
 
 const app = express();
 app.use(express.json());
@@ -29,6 +33,10 @@ app.get("/test", (req, res) => {
 //Routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/properties", propertyRouter);
+app.use("/api/v1/payments", paymentRouter);
+app.use("/api/v1/leases", leaseRouter);
+app.use("/api/v1/applications", applicationRouter);
+app.use("/api/v1/stats", statsRouter);
 
 //Error handling middleware
 app.use(errorMiddleware);

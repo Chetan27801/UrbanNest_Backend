@@ -9,15 +9,15 @@ import {
 } from "../controllers/auth.controller";
 
 //middleware
-import { validateSchema } from "../middleware/validation.middleware";
+import { validateBody } from "../middleware/validation.middleware";
 
 //schema
 import { registerSchema, loginSchema } from "../schema/user.schema";
 
 const router = Router();
 
-router.post("/register", validateSchema(registerSchema), register as any);
-router.post("/login", validateSchema(loginSchema), login as any);
+router.post("/register", validateBody(registerSchema), register as any);
+router.post("/login", validateBody(loginSchema), login as any);
 
 //TODO: Add validation middleware for google auth
 router.get("/google", googleAuth as any);
