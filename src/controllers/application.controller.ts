@@ -7,8 +7,8 @@ import {
 	getApplicationByPropertyIdAndTenantId as getApplicationByPropertyIdAndTenantIdService,
 	getApplicationById as getApplicationByIdService,
 	updateAllApplication as updateAllApplicationService,
-} from "../services/application.servies";
-import { createApplication as createApplicationService } from "../services/application.servies";
+} from "../services/application.services";
+import { createApplication as createApplicationService } from "../services/application.services";
 import { ApplicationStatus, PropertyStatus } from "../types/enums";
 import { IProperty } from "../types/property.type";
 import { updateProperty as updatePropertyService } from "../services/property.services";

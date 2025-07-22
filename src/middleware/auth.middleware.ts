@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import { IUser } from "../types/user.type";
 
 import jwt from "jsonwebtoken";
 import { createError } from "../utils/api.Response";
@@ -12,10 +11,13 @@ const authMiddleware = (allowedRoles: string[] = []) => {
 				return next(createError("Unauthorized", 401));
 			}
 
-			const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+			const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+				_id: string;
+				role: string;
+			};
 
 			//Role verification
-			const userRole = (decoded as IUser).role.toLowerCase();
+			const userRole = decoded.role.toLowerCase();
 
 			const hasAccess =
 				allowedRoles.length === 0 || allowedRoles.includes(userRole);
@@ -24,7 +26,7 @@ const authMiddleware = (allowedRoles: string[] = []) => {
 			}
 
 			//Add user to request object
-			req.user = decoded as IUser;
+			req.user = decoded;
 		} catch (error) {
 			return next(createError("Invalid token", 400));
 		}
