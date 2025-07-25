@@ -3,7 +3,7 @@ import { createError } from "../utils/api.Response";
 
 //Schema
 import {
-	CreatePropertyType,	
+	CreatePropertyType,
 	UpdatePropertyType,
 	searchPropertySchema,
 } from "../schema/property.schema";
@@ -17,6 +17,10 @@ import {
 	deleteProperty as deletePropertyService,
 	searchProperty as searchPropertyService,
 } from "../services/property.services";
+
+//Utils
+import { MediaService } from "../utils/media";
+
 import { IUser } from "../types/user.type";
 
 //--------------------------------Controllers--------------------------------
@@ -182,13 +186,7 @@ export const aiSearch = async (
 	}
 };
 
-
-
-
-
-
-
-//TODO: Upload image to S3 bucket
+//Upload single property image
 export const uploadImage = async (
 	req: Request,
 	res: Response,
@@ -196,14 +194,125 @@ export const uploadImage = async (
 ) => {
 	try {
 		const image = req.file;
+		const { propertyId, catergory = "gallery" } = req.body;
+
 		if (!image) {
 			return next(createError("No image provided", 400));
 		}
-		// const imageUrl = await uploadImageToS3(image);
+
+		if (!propertyId) {
+			return next(createError("Property Id is required", 400));
+		}
+
+		const uploadResult = await MediaService.uploadPropertyMedia(
+			image,
+			propertyId,
+			"image",
+			catergory
+		);
+
 		return res.status(200).json({
 			success: true,
 			message: "Image uploaded successfully",
-			data: req.file,
+			data: uploadResult,
+		});
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
+//upload property video
+export const uploadVideo = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const video = req.file;
+		const { propertyId } = req.body;
+
+		if (!video) {
+			return next(createError("No video provided", 400));
+		}
+
+		if (!propertyId) {
+			return next(createError("Property Id is required", 400));
+		}
+
+		const uploadResult = await MediaService.uploadPropertyMedia(
+			video,
+			propertyId,
+			"video",
+			"tours"
+		);
+
+		return res.status(200).json({
+			success: true,
+			message: "Video uploaded successfully",
+			data: uploadResult,
+		});
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
+export const uploadMultipleMedia = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const files = req.files as Express.Multer.File[];
+		const { propertyId } = req.body;
+
+		if (!files || files.length === 0) {
+			return next(createError("No files provided", 400));
+		}
+		if (!propertyId) {
+			return next(createError("Property Id is required", 400));
+		}
+
+		const uploadPromises = files.map((file) => {
+			const mediaType = file.mimetype.startsWith("image/") ? "image" : "video";
+			const category = mediaType === "image" ? "gallery" : "tours";
+
+			return MediaService.uploadPropertyMedia(
+				file,
+				propertyId,
+				mediaType,
+				category
+			);
+		});
+
+		const uploadResults = await Promise.all(uploadPromises);
+
+		return res.status(200).json({
+			success: true,
+			message: "Files uploaded successfully",
+			data: uploadResults,
+		});
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
+export const deleteMedia = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const { key } = req.params;
+
+		if (!key) {
+			return next(createError("Media key is required", 400));
+		}
+
+		await MediaService.deleteFromS3(key);
+
+		return res.status(200).json({
+			success: true,
+			message: "Media deleted successfully",
 		});
 	} catch (error) {
 		return next(createError("Internal server error", 500, String(error)));

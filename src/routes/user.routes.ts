@@ -6,7 +6,11 @@ import {
 	updateProfile,
 	getAllUsers,
 	getUserById,
+	uploadAvatar,
+	getAvatar,
+	deleteAvatar,
 } from "../controllers/user.controller";
+import { uploadUserAvatar } from "../middleware/upload.middleware";
 
 const router = Router();
 
@@ -38,5 +42,29 @@ router.get("/all-users", authMiddleware(["admin"]), getAllUsers as any);
 
 //get user by id
 router.get("/user-by-id/:id", authMiddleware(["admin"]), getUserById as any);
+
+//-------------User media-------------
+
+//upload user avatar
+router.post(
+	"/upload-avatar",
+	authMiddleware(["admin", "tenant", "landlord"]),
+	uploadUserAvatar.single("avatar"),
+	uploadAvatar as any
+);
+
+//get user avatar
+router.get(
+	"/get-avatar",
+	authMiddleware(["admin", "tenant", "landlord"]),
+	getAvatar as any
+);
+
+//delete user avatar
+router.delete(
+	"/delete-avatar",
+	authMiddleware(["admin", "tenant", "landlord"]),
+	deleteAvatar as any
+);
 
 export default router;

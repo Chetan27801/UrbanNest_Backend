@@ -10,6 +10,8 @@ import {
 	uploadImage,
 	searchProperty,
 	aiSearch,
+	uploadVideo,
+	uploadMultipleMedia,
 } from "../controllers/property.controller";
 
 //Middleware
@@ -24,8 +26,8 @@ import {
 	updatePropertySchema,
 	searchPropertySchema,
 } from "../schema/property.schema";
-import upload from "../middleware/upload.middleware";
 import authMiddleware from "../middleware/auth.middleware";
+import { uploadPropertyMedia } from "../middleware/upload.middleware";
 
 const router = Router();
 
@@ -77,8 +79,6 @@ router.get(
 	searchProperty as any
 );
 
-
-
 //TODO: AI Search implementation with Perplexity API
 //ai search for properties
 router.get(
@@ -87,13 +87,28 @@ router.get(
 	aiSearch as any
 );
 
-
-//TODO: Upload image to S3
+//upload single image
 router.post(
-	"/upload",
+	"/upload/image",
 	authMiddleware(["admin", "landlord"]),
-	upload.single("image"),
+	uploadPropertyMedia.single("image"),
 	uploadImage as any
+);
+
+//upload single video
+router.post(
+	"/upload/video",
+	authMiddleware(["admin", "landlord"]),
+	uploadPropertyMedia.single("video"),
+	uploadVideo as any
+);
+
+//upload multiple files (max 10 files)
+router.post(
+	"/upload/multiple",
+	authMiddleware(["admin", "landlord"]),
+	uploadPropertyMedia.array("files", 10), //max 10 files
+	uploadMultipleMedia as any
 );
 
 export default router;
