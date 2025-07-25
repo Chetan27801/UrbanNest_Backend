@@ -23,4 +23,21 @@ const createUser = async (userData: ICreateUser) => {
 	return await User.create(userData);
 };
 
-export { findUserByEmail, createUser, findUserByGoogleId, findUserById };
+//find all users
+const findAllUsers = async (page: number, limit: number) => {
+	const skip = (page - 1) * limit;
+	const [users, totalUsers] = await Promise.all([
+		User.find({}).skip(skip).limit(limit),
+		User.countDocuments(),
+	]);
+
+	return { users, totalUsers };
+};
+
+export {
+	findUserByEmail,
+	createUser,
+	findUserByGoogleId,
+	findUserById,
+	findAllUsers,
+};

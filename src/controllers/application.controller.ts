@@ -128,7 +128,9 @@ export const updateApplication = async (
 	next: NextFunction
 ) => {
 	const { id } = req.params;
-	const { status, message } = req.body;
+	const { status } = req.body;
+
+	//start transaction
 	const session = await mongoose.startSession();
 	session.startTransaction();
 
@@ -142,7 +144,7 @@ export const updateApplication = async (
 		if (application.status !== ApplicationStatus.Pending) {
 			await session.abortTransaction();
 			await session.endSession();
-			return next(createError("Application is already updated", 400));
+			return next(createError("Application is already processed", 400));
 		}
 
 		const propertyId = application.property.toString();
@@ -150,23 +152,23 @@ export const updateApplication = async (
 		await application.save({ session });
 
 		if (status === ApplicationStatus.Approved) {
-			await updateAllApplicationService(id, propertyId, message, session); //update all applications status to rejected except the current one
+			await updateAllApplicationService(id, propertyId, session); //update all applications status to rejected except the current one
 
+			//update property status to unavailable
 			await updatePropertyService(
 				{ _id: propertyId },
 				{ isAvailable: false },
 				{ session }
 			);
-
-			await session.commitTransaction();
-			await session.endSession();
 		}
+
+		await session.commitTransaction();
+		await session.endSession();
 
 		//TODO: Send email to tenant about the approval or rejection
 		return res.status(200).json({
 			success: true,
 			message: "Application updated successfully",
-			data: application,
 		});
 	} catch (error) {
 		await session.abortTransaction();

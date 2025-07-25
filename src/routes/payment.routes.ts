@@ -9,6 +9,9 @@ import {
 
 const router = Router();
 
+//--------------------------------Routes--------------------------------
+
+//get payments from lease id
 router.get(
 	"/get-payments/lease/:id",
 	authMiddleware(["landlord, tenant"]),
@@ -22,12 +25,14 @@ router.post(
 	createPayment as any
 );
 
+//get payment by payment id
 router.get(
 	"/get-payment/:id",
 	authMiddleware(["landlord, tenant"]),
 	getPaymentById as any
 );
 
+//get payment history for landlord or tenant
 router.get(
 	"/get-payment-history",
 	authMiddleware(["landlord, tenant"]),

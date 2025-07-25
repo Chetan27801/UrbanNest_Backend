@@ -34,14 +34,13 @@ export const getApplicationById = async (id: string) => {
 };
 
 export const updateAllApplication = async (
-    id: string,
+	id: string,
 	propertyId: string,
-	message: string,
-	session: any
+	session?: any
 ) => {
-	return await Application.updateMany( 
-		{ property: propertyId, _id: { $ne: id } },   //update all applications except the current one (ne = not equal)
-		{ $set: { status: ApplicationStatus.Rejected, message } },
+	return await Application.updateMany(
+		{ property: propertyId, _id: { $ne: id } }, //update all applications except the current one (ne = not equal)
+		{ $set: { status: ApplicationStatus.Rejected } },
 		{ session }
 	);
 };

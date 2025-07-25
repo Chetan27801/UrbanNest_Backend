@@ -82,11 +82,13 @@ export const getPaymentHistory = async (
 			query.tenant = user._id;
 		}
 
-		const { page, limit } = req.query;
+		const { page = 1, limit = 10 } = req.query;
 		const skip = (Number(page) - 1) * Number(limit);
 
+		//get leases by query
 		const userLeases = await getLeasesByQuery(query);
 
+		//if no leases found
 		if (userLeases.length === 0) {
 			return res.status(200).json({
 				success: true,
@@ -95,8 +97,10 @@ export const getPaymentHistory = async (
 			});
 		}
 
+		//get lease ids to get payments
 		const leaseIds = userLeases.map((lease) => lease._id);
 
+		//get payments from lease ids
 		const { payments, totalCount } = await getPaymentsFromLeaseIdsService(
 			leaseIds,
 			skip,
@@ -108,9 +112,11 @@ export const getPaymentHistory = async (
 		return res.status(200).json({
 			success: true,
 			message: "Payment history fetched successfully",
-			data: payments,
-			totalPages,
-			totalCount,
+			data: {
+				payments,
+				totalPages,
+				totalCount,
+			},
 		});
 	} catch (error) {
 		return next(createError("Internal server error", 500, String(error)));
