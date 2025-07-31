@@ -16,7 +16,6 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 		if (!email || !password) {
 			return next(createError("Email and password are required", 400));
 		}
-
 		const user: IUserWithPassword | null = await findUserByEmail(email);
 
 		if (!user) {
@@ -31,7 +30,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 
 		const token = generateToken(user._id.toString(), user.role);
 
-		return res.status(200).json({ token });
+		return res.status(200).json({ token, user });
 	} catch (error) {
 		console.error("Login error:", error);
 		return next(createError("Internal server error", 500));
@@ -55,7 +54,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
 		const newUser = await createUser(userData);
 		const token = generateToken(newUser._id.toString(), newUser.role);
 
-		return res.status(201).json({ token });
+		return res.status(201).json({ token, user: newUser });
 	} catch (error) {
 		console.error("Registration error:", error);
 		return next(createError("Internal server error", 500));
@@ -198,25 +197,34 @@ const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
 	}
 };
 
-const isEmailVerified = async (req: Request, res: Response, next: NextFunction) => {
-	try{
+const isEmailVerified = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
 		const { email, verificationToken } = req.body;
 
-		if(!email || !verificationToken){
-			return next(createError("Email and verification token are required", 400));
+		if (!email || !verificationToken) {
+			return next(
+				createError("Email and verification token are required", 400)
+			);
 		}
 
 		const user = await findUserByEmail(email);
 
-		if(!user){
+		if (!user) {
 			return next(createError("User not found", 404));
 		}
 
-		if(user.verificationTokenExpiresAt && user.verificationTokenExpiresAt < new Date()){
+		if (
+			user.verificationTokenExpiresAt &&
+			user.verificationTokenExpiresAt < new Date()
+		) {
 			return next(createError("Verification token expired", 400));
 		}
 
-		if(user.verificationToken !== verificationToken){
+		if (user.verificationToken !== verificationToken) {
 			return next(createError("Invalid verification token", 400));
 		}
 
@@ -226,12 +234,11 @@ const isEmailVerified = async (req: Request, res: Response, next: NextFunction) 
 		await user.save();
 
 		return res.status(200).json({ message: "Email verified" });
-
-	}catch(error){
+	} catch (error) {
 		console.error("Is email verified error:", error);
 		return next(createError("Internal server error", 500));
 	}
-}
+};
 
 export {
 	register,
