@@ -188,8 +188,7 @@ export const getAllApplicationsByLandlord = async (
 ) => {
 	try {
 		const user = req.user as IUser;
-		const query: any = { landlord: user._id };
-		const applications = await getAllApplicationsByLandlordService(query);
+		const applications = await getAllApplicationsByLandlordService(user._id);
 
 		return res.status(200).json({
 			success: true,
