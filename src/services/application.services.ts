@@ -40,6 +40,10 @@ export const getAllApplicationsByLandlord = async (landlordId: string) => {
 		.populate({
 			path: "property",
 			select: "name photoUrls location",
+			populate: {
+				path: "landlord",
+				select: "name email",
+			},
 		})
 		.populate({
 			path: "tenant",
