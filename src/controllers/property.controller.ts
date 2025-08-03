@@ -56,6 +56,7 @@ export const getAllProperties = async (
 		let query = {};
 
 		const user = req.user as IUser;
+		let { page = 1, limit = 10 } = req.query;
 
 		//If user is landlord, only fetch properties that belong to them
 		if (user.role === "landlord") {
@@ -63,7 +64,10 @@ export const getAllProperties = async (
 				landlord: user._id,
 			};
 		}
-		const properties = await getAllPropertiesService(query);
+		page = Number(page);
+		limit = Number(limit);
+
+		const properties = await getAllPropertiesService(query, page, limit);
 
 		return res.status(200).json({
 			success: true,

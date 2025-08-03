@@ -1,6 +1,4 @@
-import Application from "../models/Application.model";
 import Property from "../models/Property.model";
-import Lease from "../models/Lease.model";
 
 //TODO: Add type to functions
 
@@ -10,20 +8,37 @@ import {
 	SearchPropertyType,
 	UpdatePropertyType,
 } from "../schema/property.schema";
-import { ApplicationStatus } from "../types/enums";
-import { ICreateLease } from "../types/lease.type";
 
 export const createProperty = async (propertyData: CreatePropertyType) => {
 	const newProperty = await Property.create(propertyData);
 	return newProperty;
 };
 
-export const getAllProperties = async (query: any) => {
-	const properties = await Property.find(query).populate(
-		"landlord",
-		"name email"
-	);
-	return properties;
+export const getAllProperties = async (
+	query: any,
+	page?: number,
+	limit?: number
+) => {
+	const pageNumber = page || 1;
+	const limitNumber = limit || 10;
+	const properties = await Property.find(query)
+		.populate("landlord", "name email")
+		.skip((pageNumber - 1) * limitNumber)
+		.limit(limitNumber);
+
+	const total = await Property.countDocuments(query);
+	const totalPages = Math.ceil(total / limitNumber);
+
+	const pagination = {
+		total,
+		page: pageNumber,
+		limit: limitNumber,
+		totalPages,
+		hasNextPage: pageNumber < totalPages,
+		hasPreviousPage: pageNumber > 1,
+	};
+
+	return { properties, pagination };
 };
 
 export const getPropertyById = async (query: any) => {

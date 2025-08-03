@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
 	applyForProperty,
 	getAllApplications,
+	getAllApplicationsByLandlord,
 	getApplicationById,
 	updateApplication,
 } from "../controllers/application.controller";
@@ -19,6 +20,13 @@ router.get(
 	"/get-all-applications",
 	authMiddleware(["tenant"]),
 	getAllApplications as any
+);
+
+//get all applications by landlord
+router.get(
+	"/get-all-applications-by-landlord",
+	authMiddleware(["landlord"]),
+	getAllApplicationsByLandlord as any
 );
 
 //get application by application id by tenant

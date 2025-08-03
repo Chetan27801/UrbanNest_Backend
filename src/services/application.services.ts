@@ -26,6 +26,28 @@ export const getAllApplications = async (query: any) => {
 	return applications;
 };
 
+export const getAllApplicationsByLandlord = async (query: any) => {
+	const properties = await Property.find({ landlord: query.landlord }).select(
+		"_id"
+	);
+	const propertyIds = properties.map((property) => property._id);
+	const applications = await Application.find({
+		property: { $in: propertyIds },
+	})
+		.populate({
+			path: "property",
+			populate: {
+				path: "landlord",
+				select: "name email profilePicture phoneNumber",
+			},
+		})
+		.populate({
+			path: "lease",
+			select: {},
+		});
+	return applications;
+};
+
 export const getApplicationById = async (id: string) => {
 	const application = await Application.findById(id)
 		.populate("property", "name")

@@ -7,6 +7,7 @@ import {
 	getApplicationByPropertyIdAndTenantId as getApplicationByPropertyIdAndTenantIdService,
 	getApplicationById as getApplicationByIdService,
 	updateAllApplication as updateAllApplicationService,
+	getAllApplicationsByLandlord as getAllApplicationsByLandlordService,
 } from "../services/application.services";
 import { createApplication as createApplicationService } from "../services/application.services";
 import { ApplicationStatus, PropertyStatus } from "../types/enums";
@@ -173,6 +174,29 @@ export const updateApplication = async (
 	} catch (error) {
 		await session.abortTransaction();
 		await session.endSession();
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
+//--------------------------------Get All Applications By Landlord--------------------------------
+
+//TODO: Add pagination
+export const getAllApplicationsByLandlord = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const user = req.user as IUser;
+		const query: any = { landlord: user._id };
+		const applications = await getAllApplicationsByLandlordService(query);
+
+		return res.status(200).json({
+			success: true,
+			message: "Applications fetched successfully",
+			data: applications,
+		});
+	} catch (error) {
 		return next(createError("Internal server error", 500, String(error)));
 	}
 };

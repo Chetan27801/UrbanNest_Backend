@@ -10,7 +10,7 @@ import { ICreateLease } from "../types/lease.type";
 import { IUser } from "../types/user.type";
 import { updateProperty as updatePropertyService } from "../services/property.services";
 import { updateAllApplication as updateApplicationService } from "../services/application.services";
-
+import Application from "../models/Application.model";
 //------------------------Controllers------------------------
 
 //---------------------------------Create Lease---------------------------------
@@ -24,6 +24,11 @@ export const createLease = async (
 		const data: ICreateLease = { ...req.body, landlord: user._id };
 
 		const lease = await createLeaseService(data);
+		if (data.application) {
+			await Application.findByIdAndUpdate(data.application, {
+				lease: lease._id,
+			});
+		}
 
 		return res.status(200).json({
 			success: true,
