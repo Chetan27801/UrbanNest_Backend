@@ -19,6 +19,7 @@ import paymentRouter from "./routes/payment.routes";
 import leaseRouter from "./routes/lease.routes";
 import applicationRouter from "./routes/application.routes";
 import chatRouter from "./routes/chat.routes";
+import userRouter from "./routes/user.routes";
 
 //Socket.IO setup
 import { initializeSocketServer } from "./sockets/index";
@@ -52,6 +53,7 @@ app.get("/test", (req, res) => {
 
 //Routes
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/users", userRouter);
 app.use("/api/v1/properties", propertyRouter);
 app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/leases", leaseRouter);

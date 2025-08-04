@@ -38,7 +38,11 @@ router.delete(
 );
 
 //get all users
-router.get("/all-users", authMiddleware(["admin"]), getAllUsers as any);
+router.get(
+	"/all-users",
+	authMiddleware(["admin", "landlord"]),
+	getAllUsers as any
+);
 
 //get user by id
 router.get("/user-by-id/:id", authMiddleware(["admin"]), getUserById as any);

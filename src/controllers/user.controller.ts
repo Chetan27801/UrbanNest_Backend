@@ -106,12 +106,10 @@ const getUserById = async (req: Request, res: Response, next: NextFunction) => {
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const { page = 1, limit = 10 } = req.query;
+		const { role, id } = req.user as IUser;
 
-		const { users, totalUsers } = await findAllUsersService(
-			Number(page),
-			Number(limit)
-		);
-		const totalPages = Math.ceil(totalUsers / Number(limit));
+		const { users, totalUsers, totalPages, hasNextPage, hasPreviousPage } =
+			await findAllUsersService(Number(page), Number(limit), role, id);
 
 		return res.status(200).json({
 			success: true,
@@ -120,6 +118,8 @@ const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
 				users,
 				totalPages,
 				totalUsers,
+				hasNextPage,
+				hasPreviousPage,
 			},
 		});
 	} catch (error) {
@@ -207,4 +207,13 @@ const deleteAvatar = async (
 	}
 };
 
-export { getProfile, updateProfile, deleteProfile, getUserById, getAllUsers, uploadAvatar, getAvatar, deleteAvatar };
+export {
+	getProfile,
+	updateProfile,
+	deleteProfile,
+	getUserById,
+	getAllUsers,
+	uploadAvatar,
+	getAvatar,
+	deleteAvatar,
+};
