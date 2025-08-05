@@ -104,7 +104,6 @@ const forgotPassword = async (
 		}
 
 		const resetToken = crypto.randomBytes(32).toString("hex");
-		console.log(resetToken);
 		const resetTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 10);
 
 		user.resetPasswordToken = resetToken;
