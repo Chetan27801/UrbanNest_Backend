@@ -35,13 +35,28 @@ const updateProfile = async (
 	next: NextFunction
 ) => {
 	try {
-		const data = req.body;
-		const { id } = req.user as IUser;
+		console.log("req.user", req.user);
 
+		const data = req.body;
+		const { _id: id } = req.user as IUser;
+
+		console.log("id", id);
 		const user = await findUserByIdService(id);
+		console.log("user", user);
 
 		if (!user) {
 			return next(createError("User not found", 404));
+		}
+
+		const { file } = req;
+		if (file) {
+			const existingAvatar = await MediaService.getUserAvatar(id);
+			if (existingAvatar) {
+				await MediaService.deleteFromS3(existingAvatar.key);
+			}
+
+			const uploadResult = await MediaService.uploadUserAvatar(file, id);
+			data.avatar = uploadResult.url;
 		}
 
 		const updatedUser = await updateUserById(id, data);
@@ -70,6 +85,11 @@ const deleteProfile = async (
 		if (!user) {
 			return next(createError("User not found", 404));
 		}
+
+		const existingAvatar = await MediaService.getUserAvatar(id);
+		if (existingAvatar) await MediaService.deleteFromS3(existingAvatar.key);
+
+		await updateUserById(id, { avatar: null });
 
 		await deleteUserById(id);
 		return res.status(200).json({
@@ -114,8 +134,10 @@ const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
 		return res.status(200).json({
 			success: true,
 			message: "Users fetched successfully",
-			data: {
-				users,
+			users,
+			pagination: {
+				page: Number(page),
+				limit: Number(limit),
 				totalPages,
 				totalUsers,
 				hasNextPage,

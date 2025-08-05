@@ -24,7 +24,6 @@ const authMiddleware = (allowedRoles: string[] = []) => {
 			if (!hasAccess) {
 				return next(createError("Access denied", 403));
 			}
-
 			//Add user to request object
 			req.user = decoded;
 		} catch (error) {

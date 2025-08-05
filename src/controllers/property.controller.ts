@@ -67,12 +67,17 @@ export const getAllProperties = async (
 		page = Number(page);
 		limit = Number(limit);
 
-		const properties = await getAllPropertiesService(query, page, limit);
+		const { properties, pagination } = await getAllPropertiesService(
+			query,
+			page,
+			limit
+		);
 
 		return res.status(200).json({
 			success: true,
 			message: "Properties fetched successfully",
-			data: properties,
+			properties,
+			pagination,
 		});
 	} catch (error) {
 		return next(createError("Internal server error", 500));

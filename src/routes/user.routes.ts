@@ -27,6 +27,7 @@ router.get(
 router.put(
 	"/update-profile",
 	authMiddleware(["admin", "tenant", "landlord"]),
+	uploadUserAvatar.single("avatar"),
 	updateProfile as any
 );
 
