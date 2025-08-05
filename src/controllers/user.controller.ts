@@ -35,14 +35,9 @@ const updateProfile = async (
 	next: NextFunction
 ) => {
 	try {
-		console.log("req.user", req.user);
-
 		const data = req.body;
 		const { _id: id } = req.user as IUser;
-
-		console.log("id", id);
 		const user = await findUserByIdService(id);
-		console.log("user", user);
 
 		if (!user) {
 			return next(createError("User not found", 404));
