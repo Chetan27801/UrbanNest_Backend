@@ -5,7 +5,9 @@ import {
 	PutObjectCommand,
 	DeleteObjectCommand,
 	ListObjectsV2Command,
+	GetObjectCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Upload } from "@aws-sdk/lib-storage";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
@@ -41,10 +43,43 @@ export class MediaService {
 		const parts = key.split("/");
 		return parts[parts.length - 2] || "unknown";
 	}
-	static getMediaUrl(key: string) {
-		return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+	static async getMediaUrl(key: string) {
+		const command = new GetObjectCommand({
+			Bucket: BUCKET_NAME,
+			Key: key,
+		});
+		const url = await getSignedUrl(s3Client, command, {
+			expiresIn: 3600,
+		});
+		return url;
 	}
 
+	//NEW CODE FOR UPLOADING FILES
+	/**
+	 * Create a presigned url to upload a file to S3
+	 */
+	static async createPresignedUrl(
+		key: string,
+		fileMetadata: {
+			ContentType: string;
+			ContentLength: number;
+		}
+	) {
+		const command = new PutObjectCommand({
+			Bucket: BUCKET_NAME,
+			Key: key,
+			...fileMetadata,
+		});
+
+		const url = await getSignedUrl(s3Client, command, {
+			expiresIn: 3600,
+		});
+		return url;
+	}
+
+
+
+	//OLD CODE FOR UPLOADING FILES
 	/**
 	 * Core function: Uploads a file to S3
 	 */
@@ -82,7 +117,7 @@ export class MediaService {
 				await s3Client.send(command);
 			}
 
-			const url = this.getMediaUrl(key);
+			const url = await this.getMediaUrl(key);
 
 			return {
 				url,
@@ -113,10 +148,10 @@ export class MediaService {
 		}
 	}
 
+	//OLD CODE FOR UPLOADING MULTIPLE FILES
 	/**
 	 * Core function: Upload multiple file
 	 */
-
 	static async uploadMultiple(
 		files: Express.Multer.File[],
 		folder: string,
@@ -136,6 +171,7 @@ export class MediaService {
 	 * Upload user avatar
 	 */
 
+	//OLD CODE FOR UPLOADING USER AVATAR
 	static async uploadUserAvatar(
 		file: Express.Multer.File,
 		userId: string
@@ -144,10 +180,19 @@ export class MediaService {
 		return this.uploadToS3(file, folder);
 	}
 
+	//NEW CODE FOR UPLOADING USER AVATAR
+	static async createPresignedUrlForUserAvatar(userId: string) {
+		const key = `users/avatars/${userId}`;
+		const url = await this.createPresignedUrl(key, {
+			ContentType: "image/jpeg",
+			ContentLength: 1024 * 1024 * 5,
+		});
+		return url;
+	}
+
 	/**
 	 * Get user avatar
 	 */
-
 	static async getUserAvatar(userId: string) {
 		const listParams = {
 			Bucket: BUCKET_NAME,
@@ -161,8 +206,10 @@ export class MediaService {
 			const avatar = response.Contents?.[0];
 			if (!avatar || !avatar.Key) return null;
 
+			const url = await this.getMediaUrl(avatar.Key);
+
 			return {
-				url: this.getMediaUrl(avatar.Key),
+				url,
 				key: avatar.Key,
 				type: this.getMediaType(avatar.Key),
 				size: avatar.Size || 0,
@@ -174,7 +221,9 @@ export class MediaService {
 		}
 	}
 
-	//-------------Property media-------------
+	//-------------PROPERTY MEDIA-------------
+
+	//OLD CODE FOR UPLOADING PROPERTY MEDIA
 	/**
 	 * Upload property media (images and videos)
 	 */
@@ -186,6 +235,25 @@ export class MediaService {
 	): Promise<UploadResult> {
 		const folder = `properties/${propertyId}/${mediaType}/${category}`;
 		return this.uploadToS3(file, folder);
+	}
+
+	//NEW CODE FOR UPLOADING PROPERTY MEDIA
+	/**
+	 * Create a presigned url to upload a property media
+	 */
+	static async createPresignedUrlForPropertyMedia(
+		propertyId: string,
+		mediaType: "image" | "video",
+		category: string
+	) {
+		const key = `properties/${propertyId}/${mediaType}/${category}`;
+		const url = await this.createPresignedUrl(key, {
+			ContentType: mediaType === "image" ? "image/jpeg" : "video/mp4",
+			ContentLength:
+				mediaType === "image" ? 1024 * 1024 * 10 : 1024 * 1024 * 50,
+		});
+
+		return url;
 	}
 
 	/**
@@ -200,10 +268,13 @@ export class MediaService {
 		try {
 			const command = new ListObjectsV2Command(listParams);
 			const response = await s3Client.send(command);
+			const urls = await Promise.all(
+				response.Contents?.map((item) => this.getMediaUrl(item.Key!)) || []
+			);
 
 			const mediaItems =
-				response.Contents?.map((item) => ({
-					url: this.getMediaUrl(item.Key!),
+				response.Contents?.map((item, index) => ({
+					url: urls[index],
 					key: item.Key,
 					type: this.getMediaType(item.Key!),
 					category: this.getMediaCategory(item.Key!),

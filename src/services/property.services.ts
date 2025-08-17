@@ -44,7 +44,7 @@ export const getAllProperties = async (
 export const getPropertyById = async (query: any) => {
 	const property = await Property.findOne(query).populate(
 		"landlord",
-		"name email"
+		"name email phoneNumber avatar"
 	);
 	return property;
 };
@@ -197,7 +197,7 @@ export const searchProperty = async (filters: SearchPropertyType) => {
 	return {
 		properties,
 		pagination: {
-			currentPage: page,
+			page,	
 			totalPages: Math.ceil(total / limit),
 			totalItems: total,
 			hasNextPage: page < Math.ceil(total / limit),

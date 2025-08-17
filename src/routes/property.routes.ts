@@ -37,7 +37,7 @@ const router = Router();
 router.post(
 	"/",
 	authMiddleware(["landlord"]),
-	validateBody(createPropertySchema),
+	uploadPropertyMedia.array("photoUrls", 10),
 	createProperty as any
 );
 

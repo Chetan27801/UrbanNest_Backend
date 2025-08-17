@@ -18,6 +18,7 @@ import { validateBody } from "../middleware/validation.middleware";
 //schema
 import { registerSchema, loginSchema } from "../schema/user.schema";
 import authMiddleware from "../middleware/auth.middleware";
+import { MediaService } from "../utils/media";
 
 const router = Router();
 
@@ -50,5 +51,20 @@ router.post("/verify-email", isEmailVerified as any);
 //google auth
 router.get("/google", googleAuth as any);
 router.get("/google/callback", googleAuthCallback as any);
+
+//-------------Presigned url-------------
+
+//presigned url for user avatar
+router.get(
+	"/presigned-url-user-avatar",
+	authMiddleware(["admin", "tenant", "landlord"]),
+	MediaService.createPresignedUrlForUserAvatar as any
+);
+//presigned url for property media
+router.get(
+	"/presigned-url-property-media",
+	authMiddleware(["admin", "tenant", "landlord"]),
+	MediaService.createPresignedUrlForPropertyMedia as any
+);
 
 export default router;
