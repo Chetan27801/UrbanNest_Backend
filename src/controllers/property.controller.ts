@@ -19,7 +19,7 @@ import {
 } from "../services/property.services";
 
 //Utils
-import { MediaService, UploadResult } from "../utils/media";
+import { MediaService } from "../utils/media";
 
 import { IUser } from "../types/user.type";
 import { IProperty } from "../types/property.type";
@@ -34,32 +34,16 @@ export const createProperty = async (
 ) => {
 	try {
 		const user = req.user as IUser;
+		const propertyData = req.body;
 		const property: CreatePropertyType = {
-			...req.body,
+			...propertyData,
 			landlord: user._id,
-			photoUrls: [],
 		};
 
-		const files = req.files as Express.Multer.File[] | undefined;
 		const newProperty = (await createPropertyService(property)) as IProperty;
-		if (files && files.length > 0) {
-			const uploadPromises = files.map((file: Express.Multer.File) => {
-				return MediaService.uploadPropertyMedia(
-					file,
-					newProperty._id,
-					"image",
-					"gallery"
-				);
-			});
-			const uploadResults = await Promise.all(uploadPromises);
-			property.photoUrls = uploadResults.map(
-				(result: UploadResult) => result.url
-			);
-		}
-
 		return res.status(201).json(newProperty);
 	} catch (error) {
-		return next(createError("Internal server error", 500));
+		return next(createError("Internal server error", 500, String(error)));
 	}
 };
 

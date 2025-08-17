@@ -1,4 +1,5 @@
 import Property from "../models/Property.model";
+import { MediaService } from "../utils/media";
 
 //TODO: Add type to functions
 
@@ -22,9 +23,30 @@ export const getAllProperties = async (
 	const pageNumber = page || 1;
 	const limitNumber = limit || 10;
 	const properties = await Property.find(query)
-		.populate("landlord", "name email")
+		.populate("landlord", "name email avatar")
 		.skip((pageNumber - 1) * limitNumber)
 		.limit(limitNumber);
+
+	// Refresh URLs for all properties
+	for (const property of properties) {
+		if (property.photoUrls && property.photoUrls.length > 0) {
+			const freshUrls = await MediaService.refreshUrls(property.photoUrls);
+			await Property.findByIdAndUpdate(property._id, { photoUrls: freshUrls });
+			property.photoUrls = freshUrls;
+		}
+
+		// Refresh landlord avatar if exists
+		if (property.landlord && (property.landlord as any).avatar) {
+			const landlordAvatar = (property.landlord as any).avatar;
+			const freshAvatarUrls = await MediaService.refreshUrls([landlordAvatar]);
+
+			const User = require("../models/User.model").default;
+			await User.findByIdAndUpdate((property.landlord as any)._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			(property.landlord as any).avatar = freshAvatarUrls[0];
+		}
+	}
 
 	const total = await Property.countDocuments(query);
 	const totalPages = Math.ceil(total / limitNumber);
@@ -46,6 +68,31 @@ export const getPropertyById = async (query: any) => {
 		"landlord",
 		"name email phoneNumber avatar"
 	);
+
+	if (!property) return property;
+
+	// Refresh photo URLs and update in database
+	if (property.photoUrls && property.photoUrls.length > 0) {
+		const freshUrls = await MediaService.refreshUrls(property.photoUrls);
+
+		// Update database with fresh URLs
+		await Property.findByIdAndUpdate(property._id, { photoUrls: freshUrls });
+		property.photoUrls = freshUrls;
+	}
+
+	// Refresh landlord avatar if exists
+	if (property.landlord && (property.landlord as any).avatar) {
+		const landlordAvatar = (property.landlord as any).avatar;
+		const freshAvatarUrls = await MediaService.refreshUrls([landlordAvatar]);
+
+		// Update user avatar in database
+		const User = require("../models/User.model").default;
+		await User.findByIdAndUpdate((property.landlord as any)._id, {
+			avatar: freshAvatarUrls[0],
+		});
+		(property.landlord as any).avatar = freshAvatarUrls[0];
+	}
+
 	return property;
 };
 
@@ -197,7 +244,7 @@ export const searchProperty = async (filters: SearchPropertyType) => {
 	return {
 		properties,
 		pagination: {
-			page,	
+			page,
 			totalPages: Math.ceil(total / limit),
 			totalItems: total,
 			hasNextPage: page < Math.ceil(total / limit),

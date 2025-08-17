@@ -5,14 +5,18 @@ import {
 	findAllUsers as findAllUsersService,
 	findUserById as findUserByIdService,
 } from "../services/auth.services";
-import { deleteUserById, updateUserById } from "../services/user.services";
+import {
+	getUserById as getUserWithRefresh,
+	deleteUserById,
+	updateUserById,
+} from "../services/user.services";
 import { MediaService } from "../utils/media";
 
 const getProfile = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const { id } = req.user as IUser;
 
-		const user = await findUserByIdService(id);
+		const user = await getUserWithRefresh(id);
 
 		if (!user) {
 			return next(createError("User not found", 404));
@@ -35,7 +39,7 @@ const updateProfile = async (
 	next: NextFunction
 ) => {
 	try {
-		const data = req.body;
+		const { data, ...avatarKey } = req.body;
 		const { _id: id } = req.user as IUser;
 		const user = await findUserByIdService(id);
 
@@ -43,15 +47,12 @@ const updateProfile = async (
 			return next(createError("User not found", 404));
 		}
 
-		const { file } = req;
-		if (file) {
+		if (avatarKey) {
 			const existingAvatar = await MediaService.getUserAvatar(id);
 			if (existingAvatar) {
 				await MediaService.deleteFromS3(existingAvatar.key);
 			}
-
-			const uploadResult = await MediaService.uploadUserAvatar(file, id);
-			data.avatar = uploadResult.url;
+			data.avatar = await MediaService.getMediaUrl(avatarKey);
 		}
 
 		const updatedUser = await updateUserById(id, data);
@@ -101,7 +102,7 @@ const getUserById = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const { id } = req.params;
 
-		const user = await findUserByIdService(id);
+		const user = await getUserWithRefresh(id);
 
 		if (!user) {
 			return next(createError("User not found", 404));
@@ -141,38 +142,6 @@ const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
 		});
 	} catch (error) {
 		console.error("Get all users error:", error);
-		return next(createError("Internal server error", 500));
-	}
-};
-
-const uploadAvatar = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
-	try {
-		const { id } = req.user as IUser;
-		const { file } = req;
-		if (!file) {
-			return next(createError("No file uploaded", 400));
-		}
-
-		const existingAvatar = await MediaService.getUserAvatar(id);
-		if (existingAvatar) {
-			await MediaService.deleteFromS3(existingAvatar.key);
-		}
-
-		const uploadResult = await MediaService.uploadUserAvatar(file, id);
-
-		await updateUserById(id, { avatar: uploadResult.url });
-
-		return res.status(200).json({
-			success: true,
-			message: "Avatar uploaded successfully",
-			data: uploadResult,
-		});
-	} catch (error) {
-		console.error("Upload avatar error:", error);
 		return next(createError("Internal server error", 500));
 	}
 };
@@ -230,7 +199,6 @@ export {
 	deleteProfile,
 	getUserById,
 	getAllUsers,
-	uploadAvatar,
 	getAvatar,
 	deleteAvatar,
 };

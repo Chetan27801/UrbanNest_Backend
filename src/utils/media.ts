@@ -49,9 +49,68 @@ export class MediaService {
 			Key: key,
 		});
 		const url = await getSignedUrl(s3Client, command, {
-			expiresIn: 3600,
+			expiresIn: 604800, // 7 days (maximum allowed by AWS)
 		});
 		return url;
+	}
+
+	/**
+	 * Extract S3 key from existing URL
+	 */
+	static extractKeyFromUrl(url: string): string | null {
+		try {
+			const urlObj = new URL(url);
+			let key = "";
+
+			// Format 1: bucket.s3.region.amazonaws.com/key
+			if (urlObj.hostname.includes(".s3.")) {
+				key = urlObj.pathname.substring(1); // Remove leading slash
+			}
+			// Format 2: s3.region.amazonaws.com/bucket/key
+			else if (urlObj.hostname.includes("s3.")) {
+				const pathParts = urlObj.pathname.split("/");
+				if (pathParts.length > 2) {
+					key = pathParts.slice(2).join("/"); // Skip empty string and bucket name
+				}
+			}
+
+			return key || null;
+		} catch (error) {
+			console.error("Error extracting key from URL:", error);
+			return null;
+		}
+	}
+
+	/**
+	 * Refresh URLs from existing URLs and return fresh ones
+	 */
+	static async refreshUrls(urls: string[]): Promise<string[]> {
+		const refreshPromises = urls.map(async (url) => {
+			const key = this.extractKeyFromUrl(url);
+			if (!key) return url; // Return original if can't extract key
+
+			try {
+				return await this.getMediaUrl(key);
+			} catch (error) {
+				console.error("Error refreshing URL:", error);
+				return url; // Return original if refresh fails
+			}
+		});
+
+		return Promise.all(refreshPromises);
+	}
+	static generateFileKey(
+		folder: string,
+		subfolder?: string,
+		fileName?: string
+	) {
+		const fileExtension = path.extname(fileName || "");
+		const uniqueFileName = `${uuidv4()}${fileExtension}`;
+		console.log("uniqueFileName: ", uniqueFileName);
+		const key = subfolder
+			? `${folder}/${subfolder}/${uniqueFileName}`
+			: `${folder}/${uniqueFileName}`;
+		return key;
 	}
 
 	//NEW CODE FOR UPLOADING FILES
@@ -68,7 +127,9 @@ export class MediaService {
 		const command = new PutObjectCommand({
 			Bucket: BUCKET_NAME,
 			Key: key,
-			...fileMetadata,
+			ContentType: fileMetadata.ContentType,
+			// Note: ContentLength should not be set in PutObjectCommand for pre-signed URLs
+			// It will be automatically handled by the HTTP request
 		});
 
 		const url = await getSignedUrl(s3Client, command, {
@@ -76,8 +137,6 @@ export class MediaService {
 		});
 		return url;
 	}
-
-
 
 	//OLD CODE FOR UPLOADING FILES
 	/**
@@ -170,15 +229,6 @@ export class MediaService {
 	/**
 	 * Upload user avatar
 	 */
-
-	//OLD CODE FOR UPLOADING USER AVATAR
-	static async uploadUserAvatar(
-		file: Express.Multer.File,
-		userId: string
-	): Promise<UploadResult> {
-		const folder = `users/avatars/${userId}`;
-		return this.uploadToS3(file, folder);
-	}
 
 	//NEW CODE FOR UPLOADING USER AVATAR
 	static async createPresignedUrlForUserAvatar(userId: string) {

@@ -20,6 +20,7 @@ import leaseRouter from "./routes/lease.routes";
 import applicationRouter from "./routes/application.routes";
 import chatRouter from "./routes/chat.routes";
 import userRouter from "./routes/user.routes";
+import mediaRouter from "./routes/media.routes";
 
 //Socket.IO setup
 import { initializeSocketServer } from "./sockets/index";
@@ -60,6 +61,7 @@ app.use("/api/v1/leases", leaseRouter);
 app.use("/api/v1/applications", applicationRouter);
 app.use("/api/v1/stats", statsRouter);
 app.use("/api/v1/chat", chatRouter);
+app.use("/api/v1/media", mediaRouter);
 
 //Error handling middleware
 app.use(errorMiddleware);
