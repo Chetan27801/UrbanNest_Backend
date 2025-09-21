@@ -5,10 +5,11 @@ import {
 	findUserByEmail,
 	findUserById,
 } from "../services/auth.services";
-import { IUser, IUserWithPassword } from "../types/user.type";
+import { IUser, IUserWithPassword, ICreateUser } from "../types/user.type";
 import passport from "../config/passport";
 import { createError } from "../utils/api.Response";
 import crypto from "crypto";
+import { registerSchema, RegisterSchema } from "../schema/user.schema";
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
 	try {
@@ -39,13 +40,9 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
 
 const register = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const userData = req.body;
+		const userData: ICreateUser = req.body;
 
-		if (!userData.name || !userData.email || !userData.password) {
-			return next(createError("All fields are required", 400));
-		}
-
-		const existingUser = await findUserByEmail(userData.email);
+		const existingUser: IUser | null = await findUserByEmail(userData.email);
 
 		if (existingUser) {
 			return next(createError("User already exists", 400));
@@ -74,18 +71,18 @@ const googleAuthCallback = async (
 	next: NextFunction
 ) => {
 	passport.authenticate("google", { session: false }, (err: any, user: any) => {
-		if (err) {
-			return next(err);
+		if (err || !user) {
+			res.redirect(`${process.env.CLIENT_URL}/login?error=google_auth_error`);
 		}
-		if (!user) {
-			return next(createError("Authentication failed", 401));
-		}
-
 		try {
 			const token = generateToken(user._id.toString(), user.role);
-			return res.status(200).json({ token });
+			const queryParams = new URLSearchParams({ token }).toString();
+
+			res.redirect(`${process.env.CLIENT_URL}/auth-callback?${queryParams}`);
 		} catch (error) {
-			return next(createError("Internal server error", 500));
+			res.redirect(
+				`${process.env.CLIENT_URL}/login?error=token_generation_error`
+			);
 		}
 	})(req, res, next);
 };

@@ -15,11 +15,20 @@ const paymentSchema = new Schema<IPayment>(
 			default: 0,
 			min: [0, "Amount paid cannot be negative"],
 		},
-		dueDate: { //on which date payment is due
+		currency: {
+			type: String,
+			required: [true, "Currency is required"],
+			default: "USD",
+			trim: true,
+			uppercase: true,
+		},
+		dueDate: {
+			//on which date payment is due
 			type: Date,
 			required: [true, "Due date is required"],
 		},
-		paymentDate: { //on which date payment is made
+		paymentDate: {
+			//on which date payment is made
 			type: Date,
 		},
 		paymentStatus: {
@@ -47,6 +56,14 @@ const paymentSchema = new Schema<IPayment>(
 			type: String,
 			trim: true,
 			maxlength: [500, "Notes cannot exceed 500 characters"],
+		},
+		paypalOrderId: {
+			type: String,
+			trim: true,
+		},
+		payPalPayerEmail: {
+			type: String,
+			trim: true,
 		},
 	},
 	{

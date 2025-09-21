@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { createError } from "../utils/api.Response";
 
-export const validateParams = (schema: z.ZodSchema<any>) => {
+export const validateParams = <T>(schema: z.ZodSchema<T>) => {
 	return (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const validatedData = schema.safeParse(req.params);
@@ -11,7 +11,7 @@ export const validateParams = (schema: z.ZodSchema<any>) => {
 					createError("Validation error", 400, validatedData.error.message)
 				);
 			}
-			req.params = validatedData.data;
+			(req as any).params = validatedData.data;
 			next();
 		} catch (error) {
 			if (error instanceof z.ZodError) {
@@ -23,7 +23,7 @@ export const validateParams = (schema: z.ZodSchema<any>) => {
 	};
 };
 
-export const validateQuery = (schema: z.ZodSchema<any>) => {
+export const validateQuery = <T>(schema: z.ZodSchema<T>) => {
 	return (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const validatedData = schema.safeParse(req.query);
@@ -32,7 +32,7 @@ export const validateQuery = (schema: z.ZodSchema<any>) => {
 					createError("Validation error", 400, validatedData.error.message)
 				);
 			}
-			req.query = validatedData.data;
+			(req as any).query = validatedData.data;
 			next();
 		} catch (error) {
 			if (error instanceof z.ZodError) {
@@ -44,7 +44,7 @@ export const validateQuery = (schema: z.ZodSchema<any>) => {
 	};
 };
 
-export const validateBody = (schema: z.ZodSchema<any>) => {
+export const validateBody = <T>(schema: z.ZodSchema<T>) => {
 	return (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const validatedData = schema.safeParse(req.body);

@@ -61,7 +61,7 @@ export const createPropertySchema = z.object({
 	squareFeet: z.number().min(1, "Square feet must be at least 1"),
 	propertyType: z.enum(getEnumValues(PropertyType) as [string, ...string[]]),
 	location: locationSchema,
-	landlord: z.string().min(1, "Landlord is required"),
+	landlord: z.string().optional(),
 	isAvailable: z.boolean().default(true),
 });
 

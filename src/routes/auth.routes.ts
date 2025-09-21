@@ -18,7 +18,6 @@ import { validateBody } from "../middleware/validation.middleware";
 //schema
 import { registerSchema, loginSchema } from "../schema/user.schema";
 import authMiddleware from "../middleware/auth.middleware";
-
 const router = Router();
 
 //TODO: add email sending features
@@ -50,6 +49,5 @@ router.post("/verify-email", isEmailVerified as any);
 //google auth
 router.get("/google", googleAuth as any);
 router.get("/google/callback", googleAuthCallback as any);
-
 
 export default router;

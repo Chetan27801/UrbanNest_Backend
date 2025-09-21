@@ -27,6 +27,7 @@ export interface IUser extends Document {
 	resetPasswordTokenExpiresAt?: Date;
 
 	//Role specific fields
+	favoriteProperties?: string[];
 
 	//Landlord profile
 	landlordProfile?: {

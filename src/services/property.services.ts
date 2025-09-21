@@ -1,4 +1,5 @@
 import Property from "../models/Property.model";
+import Lease from "../models/Lease.model";
 import { MediaService } from "../utils/media";
 
 //TODO: Add type to functions
@@ -9,6 +10,7 @@ import {
 	SearchPropertyType,
 	UpdatePropertyType,
 } from "../schema/property.schema";
+import { IProperty } from "../types/property.type";
 
 export const createProperty = async (propertyData: CreatePropertyType) => {
 	const newProperty = await Property.create(propertyData);
@@ -255,4 +257,57 @@ export const searchProperty = async (filters: SearchPropertyType) => {
 	};
 };
 
-//create lease
+export const getAllPropertiesByTenant = async (
+	query: any,
+	page?: number,
+	limit?: number
+) => {
+	const pageNumber = page || 1;
+	const limitNumber = limit || 10;
+	const leases = await Lease.find({ tenant: query.userId }).populate({
+		path: "property",
+		populate: {
+			path: "landlord",
+			select: "name email phoneNumber avatar",
+		},
+	});
+
+	const properties: IProperty[] = [];
+	leases.map((lease) =>
+		properties.push(lease.property as unknown as IProperty)
+	);
+	// Refresh URLs for all properties
+	for (const property of properties) {
+		if (property.photoUrls && property.photoUrls.length > 0) {
+			const freshUrls = await MediaService.refreshUrls(property.photoUrls);
+			await Property.findByIdAndUpdate(property._id, { photoUrls: freshUrls });
+			property.photoUrls = freshUrls;
+		}
+
+		// Refresh landlord avatar if exists
+		if (property.landlord && (property.landlord as any).avatar) {
+			const landlordAvatar = (property.landlord as any).avatar;
+			const freshAvatarUrls = await MediaService.refreshUrls([landlordAvatar]);
+
+			const User = require("../models/User.model").default;
+			await User.findByIdAndUpdate((property.landlord as any)._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			(property.landlord as any).avatar = freshAvatarUrls[0];
+		}
+	}
+
+	const total = await Property.countDocuments(query);
+	const totalPages = Math.ceil(total / limitNumber);
+
+	const pagination = {
+		total,
+		page: pageNumber,
+		limit: limitNumber,
+		totalPages,
+		hasNextPage: pageNumber < totalPages,
+		hasPreviousPage: pageNumber > 1,
+	};
+
+	return { properties, pagination };
+};

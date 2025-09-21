@@ -5,6 +5,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import http from "http";
+import cookieParser from "cookie-parser";
 import connectDB from "./config/database";
 import passport from "./config/passport";
 
@@ -21,6 +22,7 @@ import applicationRouter from "./routes/application.routes";
 import chatRouter from "./routes/chat.routes";
 import userRouter from "./routes/user.routes";
 import mediaRouter from "./routes/media.routes";
+import pdfRouter from "./routes/pdf.routes";
 
 //Socket.IO setup
 import { initializeSocketServer } from "./sockets/index";
@@ -33,12 +35,26 @@ initializeSocketServer(server);
 
 app.use(
 	cors({
-		origin: process.env.CLIENT_URL,
-		methods: ["GET", "POST", "PUT", "DELETE"],
-		allowedHeaders: ["Content-Type", "Authorization"],
+		// origin: [
+		// 	"*",
+		// 	process.env.CLIENT_URL!,
+		// 	"https://accounts.google.com",
+		// 	"https://oauth2.googleapis.com",
+		// 	"https://www.paypal.com",
+		// 	"https://www.sandbox.paypal.com",
+		// 	"https://api.paypal.com",
+		// 	"https://api.sandbox.paypal.com",
+		// 	"https://*.paypal.com",
+		// 	"https://*.paypalobjects.com",
+		// ],
+		origin: true,
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 		credentials: true,
+		optionsSuccessStatus: 200, // Some legacy browsers choke on 204
 	})
 );
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -62,6 +78,7 @@ app.use("/api/v1/applications", applicationRouter);
 app.use("/api/v1/stats", statsRouter);
 app.use("/api/v1/chat", chatRouter);
 app.use("/api/v1/media", mediaRouter);
+app.use("/api/v1/pdf", pdfRouter);
 
 //Error handling middleware
 app.use(errorMiddleware);

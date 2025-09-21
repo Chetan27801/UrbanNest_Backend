@@ -134,6 +134,12 @@ const userSchema = new Schema<IUser>(
 				},
 			},
 		},
+		
+		//favorites Properties
+		favoriteProperties: {
+			type: [Schema.Types.ObjectId],
+			ref: "Property",
+		},
 
 		//Activity tracking
 		lastActive: {

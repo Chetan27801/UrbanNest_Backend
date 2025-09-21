@@ -21,6 +21,7 @@ const authMiddleware = (allowedRoles: string[] = []) => {
 
 			const hasAccess =
 				allowedRoles.length === 0 || allowedRoles.includes(userRole);
+
 			if (!hasAccess) {
 				return next(createError("Access denied", 403));
 			}

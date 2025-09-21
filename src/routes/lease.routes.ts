@@ -13,20 +13,20 @@ const router = Router();
 
 //--------------------------------Routes--------------------------------
 
-//create lease by landlord
+//create lease by landlord (not needed anymore doing in the application controller)
 router.post("/create-lease", authMiddleware(["landlord"]), createLease as any);
 
 //get all leases by landlord or tenant
 router.get(
-	"/all-leases",
-	authMiddleware(["landlord, tenant"]),
+	"/all-leases/:status",
+	authMiddleware(["tenant", "landlord"]),
 	getAllLease as any
 );
 
 //get lease by lease id
 router.get(
 	"/get-lease/:id",
-	authMiddleware(["landlord, tenant"]),
+	authMiddleware(["landlord", "tenant"]),
 	getLeaseById as any
 );
 

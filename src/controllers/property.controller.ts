@@ -16,6 +16,7 @@ import {
 	updateProperty as updatePropertyService,
 	deleteProperty as deletePropertyService,
 	searchProperty as searchPropertyService,
+	getAllPropertiesByTenant as getAllPropertiesByTenantService,
 } from "../services/property.services";
 
 //Utils
@@ -64,15 +65,24 @@ export const getAllProperties = async (
 			query = {
 				landlord: user._id,
 			};
+		} else if (user.role === "tenant") {
+			query = {
+				userId: user._id,
+			};
 		}
 		page = Number(page);
 		limit = Number(limit);
-
-		const { properties, pagination } = await getAllPropertiesService(
-			query,
-			page,
-			limit
-		);
+		let properties = [];
+		let pagination: any = {};
+		if (user.role === "landlord" || user.role === "admin") {
+			const result = await getAllPropertiesService(query, page, limit);
+			properties = result.properties;
+			pagination = result.pagination;
+		} else {
+			const result = await getAllPropertiesByTenantService(query, page, limit);
+			properties = result.properties;
+			pagination = result.pagination;
+		}
 
 		return res.status(200).json({
 			success: true,
@@ -95,11 +105,6 @@ export const getPropertyById = async (
 		const user = req.user as IUser;
 
 		let query: any = { _id: req.params.id };
-
-		//If user is landlord, only fetch properties that belong to them
-		if (user && user.role === "landlord") {
-			query.landlord = user._id;
-		}
 
 		const property = await getPropertyByIdService(query);
 
@@ -174,7 +179,9 @@ export const searchProperty = async (
 		return res.status(200).json({
 			success: true,
 			message: "Properties fetched successfully",
-			data: result,
+			data: {
+				properties: result.properties,
+			},
 			pagination: result.pagination,
 			appliedFilters: result.appliedFilters,
 		});

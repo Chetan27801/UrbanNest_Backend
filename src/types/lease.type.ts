@@ -10,7 +10,7 @@ export interface ILease extends Document {
 	tenant: Types.ObjectId;
 	landlord: Types.ObjectId;
 	application?: Types.ObjectId;
-	isActive: boolean;
+	isActive: string;
 	createdAt: Date;
 	updatedAt: Date;
 }

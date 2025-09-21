@@ -54,6 +54,10 @@ const createUser = async (userData: ICreateUser) => {
 // 	return { users, totalUsers, totalPages, hasNextPage, hasPreviousPage };
 // };
 
+interface IUserWithTotalProperties extends IUser {
+	totalProperties: number;
+}
+
 const findAllUsers = async (
 	page: number,
 	limit: number,
@@ -61,24 +65,16 @@ const findAllUsers = async (
 	id: string
 ) => {
 	const skip = (page - 1) * limit;
-	let users: IUser[] = [];
+	let users: any = [];
 	let totalUsers: number = 0;
-
 	if (role === "admin") {
 		[users, totalUsers] = await Promise.all([
 			User.find({}).skip(skip).limit(limit),
 			User.countDocuments(),
 		]);
 	} else if (role === "landlord") {
-		const tenantIds = await Lease.distinct("tenant", { landlord: id });
-
-		totalUsers = tenantIds.length;
-
-		users = await User.find({
-			_id: { $in: tenantIds },
-		})
-			.skip(skip)
-			.limit(limit);
+		users = await Lease.find({ landlord: id }).populate("tenant");
+		totalUsers = users.length;
 	}
 
 	const totalPages = Math.ceil(totalUsers / limit);

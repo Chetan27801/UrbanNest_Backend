@@ -8,6 +8,8 @@ import {
 	getUserById,
 	getAvatar,
 	deleteAvatar,
+	toggleFavoriteProperty,
+	getFavoriteProperties,
 } from "../controllers/user.controller";
 
 const router = Router();
@@ -57,6 +59,20 @@ router.delete(
 	"/delete-avatar",
 	authMiddleware(["admin", "tenant", "landlord"]),
 	deleteAvatar as any
+);
+
+//add/remove favorite property
+router.post(
+	"/favorite-property",
+	authMiddleware(["tenant"]),
+	toggleFavoriteProperty as any
+);
+
+//get favorite properties
+router.get(
+	"/favorite-properties",
+	authMiddleware(["tenant"]),
+	getFavoriteProperties as any
 );
 
 export default router;

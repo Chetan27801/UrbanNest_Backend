@@ -1,10 +1,11 @@
 import { Router } from "express";
 import authMiddleware from "../middleware/auth.middleware";
 import {
-	createPayment,
+	createPaymentOrder,
 	getPaymentsFromLeaseId,
 	getPaymentById,
 	getPaymentHistory,
+	capturePaymentOrder,
 } from "../controllers/payment.controller";
 
 const router = Router();
@@ -13,16 +14,23 @@ const router = Router();
 
 //get payments from lease id
 router.get(
-	"/get-payments/lease/:id",
-	authMiddleware(["landlord, tenant"]),
+	"/get-payments/lease/:id/:status",
+	authMiddleware(["landlord", "tenant"]),
 	getPaymentsFromLeaseId as any
 );
 
-//TODO: Process a payment for a specific paymentId (e.g., from a payment gateway webhook).
+//create payment
 router.post(
 	"/create-payment",
-	authMiddleware(["landlord"]),
-	createPayment as any
+	authMiddleware(["tenant"]),
+	createPaymentOrder as any
+);
+
+//capture payment
+router.post(
+	"/capture-payment",
+	authMiddleware(["tenant"]),
+	capturePaymentOrder as any
 );
 
 //get payment by payment id
@@ -34,7 +42,7 @@ router.get(
 
 //get payment history for landlord or tenant
 router.get(
-	"/get-payment-history",
+	"/get-payment-history/:id/:status",
 	authMiddleware(["landlord, tenant"]),
 	getPaymentHistory as any
 );

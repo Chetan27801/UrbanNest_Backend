@@ -3,7 +3,7 @@ import Lease from "../models/Lease.model";
 import Payment from "../models/Payment.model";
 import Property from "../models/Property.model";
 import User from "../models/User.model";
-import { ApplicationStatus } from "../types/enums";
+import { ApplicationStatus, getEnumValues, PropertyType } from "../types/enums";
 import { Types } from "mongoose";
 
 const adminStatsOverview = async () => {
@@ -115,6 +115,32 @@ const getLandlordFinancials = async (id: string) => {
 	};
 };
 
+const getPropertyDataForHome = async (type: string) => {
+	const propertyTypes = type === "all" ? getEnumValues(PropertyType) : [type];
+	const properties = await Property.find({
+		propertyType: { $in: propertyTypes },
+	})
+		.sort({ postedDate: -1 })
+		.limit(8)
+		.select(
+			"name pricePerMonth photoUrls propertyType averageRating numberOfReviews isAvailable location"
+		);
+
+	const totalProperties = await Property.countDocuments();
+	const totalAvailableProperties = await Property.countDocuments({
+		isAvailable: true,
+	});
+	const totalUsers = await User.countDocuments();
+	const totalApplications = await Application.countDocuments();
+
+	return {
+		properties,
+		totalProperties,
+		totalAvailableProperties,
+		totalUsers,
+		totalApplications,
+	};
+};
 export {
 	adminStatsOverview,
 	getAllUsers,
@@ -123,4 +149,5 @@ export {
 	getTenantPaymentsData,
 	landlordStatsOverview,
 	getLandlordFinancials,
+	getPropertyDataForHome,
 };

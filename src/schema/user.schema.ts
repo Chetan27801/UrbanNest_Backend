@@ -20,7 +20,7 @@ export const registerSchema = z.object({
 			"Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
 		)
 		.trim(),
-	role: z.enum(["tenant", "landload", "admin"]).default("tenant").optional(),
+	role: z.enum(["tenant", "landlord", "admin"]).default("tenant").optional(),
 	avatar: z.string().optional(),
 });
 

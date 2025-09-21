@@ -1,11 +1,12 @@
 import { Schema, model } from "mongoose";
 import { ILease } from "../types/lease.type";
+import { getEnumValues, LeaseStatus } from "../types/enums";
 
 const leaseSchema = new Schema<ILease>(
 	{
 		startDate: {
 			type: Date,
-			required: [true, "Start date is required"], 
+			required: [true, "Start date is required"],
 		},
 		endDate: {
 			type: Date,
@@ -47,8 +48,11 @@ const leaseSchema = new Schema<ILease>(
 			ref: "Application",
 		},
 		isActive: {
-			type: Boolean,
-			default: true,
+			type: String,
+			enum: {
+				values: getEnumValues(LeaseStatus),
+			},
+			default: LeaseStatus.Pending,
 		},
 	},
 	{
@@ -61,7 +65,6 @@ const leaseSchema = new Schema<ILease>(
 leaseSchema.index({ property: 1 });
 leaseSchema.index({ tenant: 1 });
 leaseSchema.index({ startDate: 1, endDate: 1 });
-leaseSchema.index({ isActive: 1 });
 
 // Virtual for payments
 leaseSchema.virtual("payments", {

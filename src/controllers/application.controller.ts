@@ -6,11 +6,12 @@ import {
 	getAllApplications as getAllApplicationsService,
 	getApplicationByPropertyIdAndTenantId as getApplicationByPropertyIdAndTenantIdService,
 	getApplicationById as getApplicationByIdService,
+	getApplicationByIdForUpdate as getApplicationByIdForUpdateService,
 	updateAllApplication as updateAllApplicationService,
 	getAllApplicationsByLandlord as getAllApplicationsByLandlordService,
 } from "../services/application.services";
 import { createApplication as createApplicationService } from "../services/application.services";
-import { ApplicationStatus, PropertyStatus } from "../types/enums";
+import { ApplicationStatus, LeaseStatus, PropertyStatus } from "../types/enums";
 import { IProperty } from "../types/property.type";
 import { updateProperty as updatePropertyService } from "../services/property.services";
 import { ICreateLease } from "../types/lease.type";
@@ -57,9 +58,12 @@ export const applyForProperty = async (
 		}
 
 		const applicationData = {
+			applicationDate: new Date(),
+			status: ApplicationStatus.Pending,
 			property: id,
 			tenant: user._id,
 			message,
+			lease: null,
 		};
 
 		const newApplication = await createApplicationService(applicationData);
@@ -82,14 +86,20 @@ export const getAllApplications = async (
 ) => {
 	try {
 		const user = req.user as IUser;
+		const { page, limit } = req.query;
 		const query: any = { tenant: user._id };
 
-		const applications = await getAllApplicationsService(query);
+		const applications = await getAllApplicationsService(
+			query,
+			Number(page),
+			Number(limit)
+		);
 
 		return res.status(200).json({
 			success: true,
 			message: "Applications fetched successfully",
-			data: applications,
+			applications: applications.applications,
+			pagination: applications.pagination,
 		});
 	} catch (error) {
 		return next(createError("Internal server error", 500, String(error)));
@@ -129,14 +139,20 @@ export const updateApplication = async (
 	next: NextFunction
 ) => {
 	const { id } = req.params;
-	const { status } = req.body;
+	const { status, leaseDetails } = req.body;
+	console.log(req.body);
+	const user = req.user as IUser;
+	// Validate status value
+	if (!Object.values(ApplicationStatus).includes(status)) {
+		return next(createError("Invalid application status", 400));
+	}
 
 	//start transaction
 	const session = await mongoose.startSession();
 	session.startTransaction();
 
 	try {
-		const application = await getApplicationByIdService(id);
+		const application = await getApplicationByIdForUpdateService(id);
 		if (!application) {
 			await session.abortTransaction();
 			await session.endSession();
@@ -152,16 +168,41 @@ export const updateApplication = async (
 		application.status = status;
 		await application.save({ session });
 
-		if (status === ApplicationStatus.Approved) {
-			await updateAllApplicationService(id, propertyId, session); //update all applications status to rejected except the current one
+		let lease = null;
 
+		if (status === ApplicationStatus.Approved) {
+			if (!leaseDetails) {
+				await session.abortTransaction();
+				await session.endSession();
+				return next(createError("Lease data is required", 400));
+			}
+
+			await updateAllApplicationService(id, propertyId, session); //update all applications status to rejected except the current one
+			console.log("all applications updated");
 			//update property status to unavailable
 			await updatePropertyService(
 				{ _id: propertyId },
 				{ isAvailable: false },
 				{ session }
 			);
+
+			//Create lease
+			const leaseData = {
+				...leaseDetails,
+				property: propertyId,
+				application: id,
+				tenant: application.tenant.toString(),
+				landlord: user._id,
+				isActive: LeaseStatus.Active,
+			};
+
+			lease = await createLeaseService(leaseData);
+
+			application.lease = new mongoose.Types.ObjectId(lease._id);
+			await application.save({ session });
 		}
+
+		console.log("application updated");
 
 		await session.commitTransaction();
 		await session.endSession();
@@ -178,9 +219,41 @@ export const updateApplication = async (
 	}
 };
 
+//--------------------------------Check Application Status for Property--------------------------------
+export const checkApplicationStatus = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const { propertyId } = req.params;
+		const user = req.user as IUser;
+
+		//Check if user is a tenant
+		if (user.role !== "tenant") {
+			return next(
+				createError("Only tenants can check application status", 401)
+			);
+		}
+
+		const existingApplication =
+			await getApplicationByPropertyIdAndTenantIdService(propertyId, user._id);
+
+		return res.status(200).json({
+			success: true,
+			message: "Application status checked successfully",
+			data: {
+				hasApplied: !!existingApplication,
+				application: existingApplication || null,
+			},
+		});
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
 //--------------------------------Get All Applications By Landlord--------------------------------
 
-//TODO: Add pagination
 export const getAllApplicationsByLandlord = async (
 	req: Request,
 	res: Response,
@@ -188,12 +261,20 @@ export const getAllApplicationsByLandlord = async (
 ) => {
 	try {
 		const user = req.user as IUser;
-		const applications = await getAllApplicationsByLandlordService(user._id);
+		const { status } = req.params;
+		const { page, limit } = req.query;
+		const applications = await getAllApplicationsByLandlordService(
+			user._id,
+			Number(page),
+			Number(limit),
+			status
+		);
 
 		return res.status(200).json({
 			success: true,
 			message: "Applications fetched successfully",
-			data: applications,
+			applications: applications.allApplications,
+			pagination: applications.pagination,
 		});
 	} catch (error) {
 		return next(createError("Internal server error", 500, String(error)));

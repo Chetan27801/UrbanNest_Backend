@@ -5,8 +5,11 @@ import {
 	getAllApplicationsByLandlord,
 	getApplicationById,
 	updateApplication,
+	checkApplicationStatus,
 } from "../controllers/application.controller";
 import authMiddleware from "../middleware/auth.middleware";
+import { validateBody } from "../middleware/validation.middleware";
+import { updateApplicationSchema } from "../schema/application.schema";
 
 const router = Router();
 
@@ -14,6 +17,13 @@ const router = Router();
 
 //apply for property with property id by tenant
 router.post("/apply/:id", authMiddleware(["tenant"]), applyForProperty as any);
+
+//check if tenant has applied for property
+router.get(
+	"/check-status/:propertyId",
+	authMiddleware(["tenant"]),
+	checkApplicationStatus as any
+);
 
 //get all applications by tenant
 router.get(
@@ -24,7 +34,7 @@ router.get(
 
 //get all applications by landlord
 router.get(
-	"/get-all-applications-by-landlord",
+	"/get-all-applications-by-landlord/:status",
 	authMiddleware(["landlord"]),
 	getAllApplicationsByLandlord as any
 );
@@ -40,6 +50,7 @@ router.get(
 router.put(
 	"/update-application/:id",
 	authMiddleware(["landlord"]),
+	validateBody(updateApplicationSchema),
 	updateApplication as any
 );
 

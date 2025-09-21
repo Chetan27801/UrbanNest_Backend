@@ -60,6 +60,12 @@ export enum PaymentStatus {
 	Overdue = "Overdue",
 }
 
+export enum LeaseStatus {
+	Active = "Active",
+	Pending = "Pending",
+	Terminated = "Terminated",
+}
+
 // Helper functions to get enum values as arrays
 export const getEnumValues = <T extends Record<string, string>>(
 	enumObject: T

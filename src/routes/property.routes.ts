@@ -44,14 +44,14 @@ router.post(
 //get all properties
 router.get(
 	"/get-all",
-	authMiddleware(["admin", "landlord"]),
+	authMiddleware(["admin", "landlord", "tenant"]),
 	getAllProperties as any
 );
 
 //get property by property id also filter with id of a user if user is landlord
 router.get(
 	"/get-by-id/:id",
-	authMiddleware(["admin", "landlord"]),
+	authMiddleware(["admin", "landlord", "tenant"]),
 	getPropertyById as any
 );
 

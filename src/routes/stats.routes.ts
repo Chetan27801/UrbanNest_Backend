@@ -8,6 +8,7 @@ import {
 	getTenantPayments,
 	getLandlordOverview,
 	getLandlordFinancials,
+	getPropertyDataForHome,
 } from "../controllers/stats.controller";
 
 const router = Router();
@@ -54,5 +55,8 @@ router.get(
 	authMiddleware(["tenant"]),
 	getTenantPayments as any
 );
+
+//property data for home page
+router.get("/property/data-for-home/:type", getPropertyDataForHome as any);
 
 export default router;

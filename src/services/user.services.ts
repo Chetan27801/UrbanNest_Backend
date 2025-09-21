@@ -25,4 +25,43 @@ const deleteUserById = async (id: string) => {
 	await User.findByIdAndDelete(id);
 };
 
-export { getUserById, updateUserById, deleteUserById };
+const getFavoriteProperties = async (
+	id: string,
+	page: number,
+	limit: number
+) => {
+	const skip = (page - 1) * limit;
+	const data = await User.findById(id)
+		.populate({
+			path: "favoriteProperties",
+			model: "Property",
+			populate: {
+				path: "landlord",
+				model: "User",
+				select: "name email phoneNumber avatar",
+			},
+		})
+		.skip(skip)
+		.limit(limit);
+
+	const properties = data?.favoriteProperties;
+	const total = properties?.length || 0;
+
+	return {
+		properties,
+		pagination: {
+			page,
+			limit,
+			totalPages: Math.ceil(total / limit),
+			hasNextPage: page < Math.ceil(total / limit),
+			hasPreviousPage: page > 1,
+			totalItems: total,
+		},
+		appliedFilters: {
+			page,
+			limit,
+		},
+	};
+};
+
+export { getUserById, updateUserById, deleteUserById, getFavoriteProperties };

@@ -20,6 +20,6 @@ const conversationSchema = new Schema<IConversation>(
 	}
 );
 
-const Conversation = model("Conversation", conversationSchema);
+const Conversation = model<IConversation>("Conversation", conversationSchema);
 
 export default Conversation;
