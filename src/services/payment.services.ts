@@ -127,6 +127,30 @@ const createPaymentRecord = async (paymentData: ICreatePayment) => {
 	return await payment.save();
 };
 
+export const markPaymentAsOverdue = async () => {
+	const currentDate = new Date();
+	currentDate.setHours(0, 0, 0, 0);
+
+	try {
+		const overduePayment = await Payment.updateMany(
+			{
+				paymentStatus: PaymentStatus.Pending,
+				dueDate: { $lt: currentDate },
+			},
+			{
+				$set: {
+					paymentStatus: PaymentStatus.Overdue,
+					updatedAt: new Date(),
+				},
+			}
+		);
+
+		return overduePayment.modifiedCount;
+	} catch (error) {
+		throw new Error("Failed to mark payment as overdue");
+	}
+};
+
 export {
 	getPaymentsFromLeaseId,
 	getPaymentById,

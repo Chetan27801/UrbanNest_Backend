@@ -65,3 +65,17 @@ export interface SocketError {
 	code: string;
 	error?: string;
 }
+
+export enum SocketEventTypes {
+	JoinRoom = "joinRoom",
+	Connected = "connected",
+	Error = "error",
+	SendMessage = "sendMessage",
+	NewMessage = "newMessage",
+	MessageAck = "messageAck",
+	MessageError = "messageError",
+	Typing = "typing",
+	UserStatusUpdate = "userStatusUpdate",
+	Disconnect = "disconnect",
+	ConnectError = "connect_error",
+}

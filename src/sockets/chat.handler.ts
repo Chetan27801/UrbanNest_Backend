@@ -5,13 +5,35 @@ import {
 	isUserInConversation,
 } from "../services/chat.services";
 import { IUser } from "../types/user.type";
+import { BroadcastType } from "../types/enums";
+import { SocketEventTypes } from "../types/socket.types";
+
+export interface JoinRoomData {
+	type: string;
+	event: SocketEventTypes.JoinRoom;
+	data: {
+		userId: string;
+	};
+}
+
+export interface SendMessageData {
+	type: string;
+	event: SocketEventTypes.SendMessage;
+	data: {
+		conversationId: string;
+		sender: string;
+		receiver: string;
+		content: string;
+	};
+}
 
 export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 	// Auto-join user to their own room
 	socket.join(user._id);
 
 	// Handle manual room joining
-	socket.on("joinRoom", (userId: string) => {
+	socket.on("joinRoom", (data: JoinRoomData) => {
+		const { userId } = data.data;
 		// Verify user can only join their own room for security
 		if (userId === user._id) {
 			socket.join(userId);
@@ -34,7 +56,7 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 	// Handle real-time message sending
 	socket.on("sendMessage", async (data) => {
 		try {
-			const { conversationId, sender, receiver, content } = data;
+			const { conversationId, sender, receiver, content } = data.data;
 
 			// Verify sender matches authenticated user
 			if (sender !== user._id) {
@@ -63,7 +85,7 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 				},
 				{
 					emitRealTime: true,
-					source: "socket",
+					source: BroadcastType.SocketIO,
 					socketId: socket.id,
 				}
 			);
@@ -134,7 +156,7 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 			// Use optimized shared service
 			const result = await markAsReadAndBroadcast(conversationId, user._id, {
 				emitRealTime: true,
-				source: "socket",
+				source: BroadcastType.SocketIO,
 				socketId: socket.id,
 			});
 

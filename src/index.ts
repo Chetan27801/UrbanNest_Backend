@@ -27,6 +27,9 @@ import pdfRouter from "./routes/pdf.routes";
 //Socket.IO setup
 import { initializeSocketServer } from "./sockets/index";
 
+//Jobs imports
+import { scheduleOverduePayments } from "./jobs/overduePayments.job";
+
 const app = express();
 const server = http.createServer(app);
 
@@ -86,4 +89,8 @@ app.use(errorMiddleware);
 server.listen(process.env.PORT, () => {
 	console.log(`Server is running on port ${process.env.PORT}`);
 	console.log(`Socket.IO server is ready for real-time chat`);
+
+	// Initialize scheduled jobs
+	scheduleOverduePayments();
+	console.log("Overdue payments job scheduled to run daily at 12:01 AM IST");
 });

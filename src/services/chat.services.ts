@@ -2,6 +2,7 @@ import Conversation from "../models/Conversation.model";
 import Message from "../models/Message.model";
 import { IMessage, IMessageInput } from "../types/chat.types";
 import { getSocketInstance } from "../sockets/index";
+import { BroadcastStatus, BroadcastType } from "../types/enums";
 
 //get or create conversation between two users
 export const getOrCreateConversation = async (
@@ -20,14 +21,35 @@ export const getOrCreateConversation = async (
 				path: "sender",
 				select: "name avatar",
 			},
+		})
+		.populate({
+			path: "lastMessage",
+			populate: {
+				path: "receiver",
+				select: "name avatar",
+			},
 		});
 
 	if (!conversation) {
 		conversation = await Conversation.create({
 			participants: [user1Id, user2Id],
 		});
-		await conversation.populate("participants", "name email role avatar");
 	}
+
+	conversation = await conversation.populate({
+		path: "lastMessage",
+		populate: {
+			path: "sender",
+			select: "name avatar",
+		},
+	});
+	conversation = await conversation.populate({
+		path: "lastMessage",
+		populate: {
+			path: "receiver",
+			select: "name avatar",
+		},
+	});
 
 	return conversation;
 };
@@ -45,6 +67,13 @@ export const getConversations = async (userId: string) => {
 				select: "name avatar",
 			},
 		})
+		.populate({
+			path: "lastMessage",
+			populate: {
+				path: "receiver",
+				select: "name avatar",
+			},
+		})
 		.sort({ updatedAt: -1 });
 };
 
@@ -58,9 +87,23 @@ export const createMessage = async (messageData: IMessageInput) => {
 		updatedAt: Date.now(),
 	});
 
-	return await Message.findById(message._id)
+	const populatedMessage = await Message.findById(message._id)
 		.populate("sender", "name avatar")
 		.populate("receiver", "name avatar");
+
+	// Transform _id to id for frontend compatibility
+	if (populatedMessage) {
+		const messageObj = populatedMessage.toObject();
+		if (messageObj.sender && messageObj.sender._id) {
+			(messageObj.sender as any).id = messageObj.sender._id.toString();
+		}
+		if (messageObj.receiver && messageObj.receiver._id) {
+			(messageObj.receiver as any).id = messageObj.receiver._id.toString();
+		}
+		return messageObj;
+	}
+
+	return populatedMessage;
 };
 
 // ✨ OPTIMIZED: Combined message creation and real-time broadcasting
@@ -68,11 +111,15 @@ export const createAndBroadcastMessage = async (
 	messageData: IMessageInput,
 	options: {
 		emitRealTime?: boolean;
-		source?: "socket" | "rest";
+		source?: BroadcastType;
 		socketId?: string;
 	} = {}
 ) => {
-	const { emitRealTime = true, source = "rest", socketId } = options;
+	const {
+		emitRealTime = true,
+		source = BroadcastType.REST,
+		socketId,
+	} = options;
 
 	try {
 		// Create message in database
@@ -87,9 +134,9 @@ export const createAndBroadcastMessage = async (
 			try {
 				const io = getSocketInstance();
 
-				// Prepare broadcast data
+				// Prepare broadcast data with transformed message
 				const broadcastData = {
-					...message.toObject(),
+					...message,
 					conversationId: messageData.conversationId,
 					timestamp: new Date().toISOString(),
 					source, // Track if message came from socket or REST
@@ -115,7 +162,9 @@ export const createAndBroadcastMessage = async (
 
 		return {
 			message,
-			broadcast: emitRealTime ? "attempted" : "skipped",
+			broadcast: emitRealTime
+				? BroadcastStatus.Attempted
+				: BroadcastStatus.Skipped,
 			source,
 		};
 	} catch (error) {
@@ -140,7 +189,36 @@ export const getMessages = async (
 		.skip(skip)
 		.limit(limit);
 
-	return messages.reverse(); //reverse the messages to get the latest messages first
+	// Transform _id to id for frontend compatibility
+	const transformedMessages = messages.map((message) => {
+		const messageObj = message.toObject();
+		if (messageObj.sender && messageObj.sender._id) {
+			(messageObj.sender as any).id = messageObj.sender._id.toString();
+		}
+		if (messageObj.receiver && messageObj.receiver._id) {
+			(messageObj.receiver as any).id = messageObj.receiver._id.toString();
+		}
+		return messageObj;
+	});
+
+	const totalMessages = await Message.countDocuments({
+		conversationId: conversationId,
+	});
+	const totalPages = Math.ceil(totalMessages / limit);
+	const hasNextPage = page < totalPages;
+	const hasPreviousPage = page > 1;
+
+	return {
+		messages: transformedMessages.reverse(),
+		pagination: {
+			page,
+			limit,
+			totalPages,
+			hasNextPage,
+			hasPreviousPage,
+			totalMessages,
+		},
+	};
 };
 
 //mark message as read
@@ -150,7 +228,10 @@ export const markMessageAsRead = async (
 ) => {
 	return await Message.updateMany(
 		{ conversationId, receiver: userId, isRead: false },
-		{ isRead: true }
+		{ isRead: true },
+		{
+			new: true,
+		}
 	);
 };
 
@@ -160,18 +241,49 @@ export const markAsReadAndBroadcast = async (
 	userId: string,
 	options: {
 		emitRealTime?: boolean;
-		source?: "socket" | "rest";
+		source?: BroadcastType;
 		socketId?: string;
 	} = {}
 ) => {
-	const { emitRealTime = true, source = "rest", socketId } = options;
+	const {
+		emitRealTime = true,
+		source = BroadcastType.REST,
+		socketId,
+	} = options;
 
 	try {
 		// 1️⃣ Mark messages as read in database
 		const result = await markMessageAsRead(conversationId, userId);
 
+		// 🔍 Provide additional context if no messages were marked
+		let reason = "";
+		if (result.modifiedCount === 0) {
+			// Check if user has any unread messages they can mark as read
+			const unreadMessagesForUser = await Message.countDocuments({
+				conversationId,
+				receiver: userId,
+				isRead: false,
+			});
+
+			if (unreadMessagesForUser === 0) {
+				// Check if user is sender of messages in this conversation
+				const userSentMessages = await Message.countDocuments({
+					conversationId,
+					sender: userId,
+				});
+
+				if (userSentMessages > 0) {
+					reason =
+						"No messages to mark as read - you are the sender of messages in this conversation";
+				} else {
+					reason =
+						"No unread messages found for this user in this conversation";
+				}
+			}
+		}
+
 		// 2️⃣ Broadcast read status if enabled
-		if (emitRealTime) {
+		if (emitRealTime && result.modifiedCount > 0) {
 			try {
 				const io = getSocketInstance();
 
@@ -197,9 +309,13 @@ export const markAsReadAndBroadcast = async (
 
 		return {
 			result,
-			broadcast: emitRealTime ? "attempted" : "skipped",
+			broadcast:
+				emitRealTime && result.modifiedCount > 0
+					? BroadcastStatus.Attempted
+					: BroadcastStatus.Skipped,
 			source,
 			messagesMarked: result.modifiedCount,
+			reason: reason || undefined,
 		};
 	} catch (error) {
 		console.error("💥 Mark as read failed:", error);

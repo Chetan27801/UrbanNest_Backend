@@ -10,6 +10,7 @@ import {
 	landlordStatsOverview as landlordStatsOverviewService,
 	getLandlordFinancials as getLandlordFinancialsService,
 	getPropertyDataForHome as getPropertyDataForHomeService,
+	getTotalPayments as getTotalPaymentsService,
 } from "../services/stats.services";
 import { IUser } from "../types/user.type";
 
@@ -181,6 +182,25 @@ export const getPropertyDataForHome = async (
 		return res.status(200).json({
 			success: true,
 			message: "Property data fetched successfully",
+			data,
+		});
+	} catch (error) {
+		return next(createError("Internal server error", 500, String(error)));
+	}
+};
+
+export const getTotalPayments = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const user = req.user as IUser;
+		const data = await getTotalPaymentsService(user._id);
+
+		return res.status(200).json({
+			success: true,
+			message: "Total payments fetched successfully",
 			data,
 		});
 	} catch (error) {

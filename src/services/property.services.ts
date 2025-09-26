@@ -148,6 +148,11 @@ export const searchProperty = async (filters: SearchPropertyType) => {
 		query.$or = [
 			{ name: { $regex: search, $options: "i" } },
 			{ description: { $regex: search, $options: "i" } },
+			{ "location.address": { $regex: search, $options: "i" } },
+			{ "location.city": { $regex: search, $options: "i" } },
+			{ "location.state": { $regex: search, $options: "i" } },
+			{ "location.country": { $regex: search, $options: "i" } },
+			{ "location.postalCode": { $regex: search, $options: "i" } },
 		];
 	}
 
@@ -239,7 +244,7 @@ export const searchProperty = async (filters: SearchPropertyType) => {
 			.sort(sort)
 			.skip(skip)
 			.limit(limit)
-			.populate("landlord", "name email"),
+			.populate("landlord", "name email phoneNumber avatar _id"),
 		Property.countDocuments(query),
 	]);
 

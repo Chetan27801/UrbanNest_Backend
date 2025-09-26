@@ -141,6 +141,52 @@ const getPropertyDataForHome = async (type: string) => {
 		totalApplications,
 	};
 };
+
+const getTotalPayments = async (id: string) => {
+	const lease = await Lease.find({ landlord: id }).select("payments");
+	const leaseIds = lease?.map((l) => l._id);
+	const totalPayments = await Payment.aggregate([
+		{
+			$match: {
+				lease: { $in: leaseIds },
+			},
+		},
+		{
+			$group: {
+				_id: null,
+				totalPayments: { $sum: "$amountPaid" },
+			},
+		},
+	]);
+
+	const now = new Date();
+	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+	const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+	const totalPaymentThisMonth = await Payment.aggregate([
+		{
+			$match: {
+				lease: { $in: leaseIds },
+				paymentDate: {
+					$gte: startOfMonth,
+					$lt: endOfMonth,
+				},
+			},
+		},
+		{
+			$group: {
+				_id: null,
+				totalPayments: { $sum: "$amountPaid" },
+			},
+		},
+	]);
+
+	return {
+		totalPayments: totalPayments[0]?.totalPayments || 0,
+		totalPaymentThisMonth: totalPaymentThisMonth[0]?.totalPayments || 0,
+	};
+};
+
 export {
 	adminStatsOverview,
 	getAllUsers,
@@ -150,4 +196,5 @@ export {
 	landlordStatsOverview,
 	getLandlordFinancials,
 	getPropertyDataForHome,
+	getTotalPayments,
 };

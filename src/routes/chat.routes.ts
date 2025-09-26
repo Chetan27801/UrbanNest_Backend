@@ -13,32 +13,32 @@ const router = Router();
 
 router.post(
 	"/conversation",
-	authMiddleware(["tenant", "landlord"]),
+	authMiddleware(["tenant", "landlord", "admin"]),
 	startConversation
 );
 router.get(
 	"/all-conversations",
-	authMiddleware(["tenant", "landlord"]),
+	authMiddleware(["tenant", "landlord", "admin"]),
 	getConversations
 );
 router.post(
 	"/send-message",
-	authMiddleware(["tenant", "landlord"]),
+	authMiddleware(["tenant", "landlord", "admin"]),
 	sendMessage
 );
 router.get(
 	"/conversation/messages/:conversationId",
-	authMiddleware(["tenant", "landlord"]),
+	authMiddleware(["tenant", "landlord", "admin"]),
 	getMessages
 );
 router.put(
 	"/mark-as-read/:conversationId",
-	authMiddleware(["tenant", "landlord"]),
+	authMiddleware(["tenant", "landlord", "admin"]),
 	markMessageAsRead
 );
 router.get(
 	"/unread-count",
-	authMiddleware(["tenant", "landlord"]),
+	authMiddleware(["tenant", "landlord", "admin"]),
 	getUnreadMessagesCount
 );
 

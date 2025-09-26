@@ -12,6 +12,7 @@ import {
 	markAsReadAndBroadcast,
 	getUnreadMessagesCount as getUnreadMessagesCountService,
 } from "../services/chat.services";
+import { BroadcastType } from "../types/enums";
 
 //----------------------------SOCKET.IO----------------------------
 // Socket.IO now handled by markAsReadAndBroadcast service
@@ -42,19 +43,6 @@ export const startConversation = async (
 		const otherUser = await User.findById(otherUserId);
 		if (!otherUser) {
 			return next(createError("Other user not found", 404));
-		}
-
-		///Ensume it's between landlord and tenant
-		if (user.role === otherUser.role) {
-			return next(
-				createError("You cannot start a conversation with yourself", 400)
-			);
-		}
-
-		if (user.role === otherUser.role) {
-			return next(
-				createError("Conversation between same role users is not allowed", 400)
-			);
 		}
 
 		const conversation = await getOrCreateConversationService(
@@ -129,7 +117,7 @@ export const sendMessage = async (
 			},
 			{
 				emitRealTime: true,
-				source: "rest",
+				source: BroadcastType.REST,
 			}
 		);
 
@@ -180,7 +168,8 @@ export const getMessages = async (
 		res.status(200).json({
 			success: true,
 			message: "Messages fetched successfully",
-			data: messages,
+			messages: messages.messages,
+			pagination: messages.pagination,
 		});
 	} catch (error) {
 		next(createError("Internal Server Error", 500, String(error)));
@@ -216,19 +205,23 @@ export const markMessageAsRead = async (
 		// Use optimized shared service
 		const result = await markAsReadAndBroadcast(conversationId, user._id, {
 			emitRealTime: true,
-			source: "rest",
+			source: BroadcastType.REST,
 		});
 
 		console.log("✅ REST API: Messages marked as read successfully");
 
 		res.status(200).json({
 			success: true,
-			message: "Messages marked as read successfully",
+			message:
+				result.messagesMarked > 0
+					? "Messages marked as read successfully"
+					: "No messages were marked as read",
 			data: {
 				messagesMarked: result.messagesMarked,
 				broadcast: result.broadcast,
 				source: result.source,
 				timestamp: new Date().toISOString(),
+				...(result.reason && { reason: result.reason }),
 			},
 		});
 	} catch (error) {

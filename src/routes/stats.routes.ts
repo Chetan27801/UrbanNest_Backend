@@ -9,6 +9,7 @@ import {
 	getLandlordOverview,
 	getLandlordFinancials,
 	getPropertyDataForHome,
+	getTotalPayments,
 } from "../controllers/stats.controller";
 
 const router = Router();
@@ -30,7 +31,6 @@ router.put(
 );
 
 //landload stats
-
 router.get(
 	"/landlord/overview",
 	authMiddleware(["landlord"]),
@@ -41,6 +41,12 @@ router.get(
 	"/landlord/financials",
 	authMiddleware(["landlord"]),
 	getLandlordFinancials as any
+);
+
+router.get(
+	"/total-payments",
+	authMiddleware(["landlord"]),
+	getTotalPayments as any
 );
 
 //tenant stats

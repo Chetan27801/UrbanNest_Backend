@@ -66,6 +66,16 @@ export enum LeaseStatus {
 	Terminated = "Terminated",
 }
 
+export enum BroadcastType {
+	SocketIO = "socket",
+	REST = "rest",
+}
+
+export enum BroadcastStatus {
+	Attempted = "Attempted",
+	Skipped = "Skipped",
+}
+
 // Helper functions to get enum values as arrays
 export const getEnumValues = <T extends Record<string, string>>(
 	enumObject: T
