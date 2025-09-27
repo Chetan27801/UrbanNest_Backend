@@ -13,43 +13,15 @@ export const getOrCreateConversation = async (
 		participants: {
 			$all: [user1Id, user2Id],
 		},
-	})
-		.populate("participants", "name email role avatar")
-		.populate({
-			path: "lastMessage",
-			populate: {
-				path: "sender",
-				select: "name avatar",
-			},
-		})
-		.populate({
-			path: "lastMessage",
-			populate: {
-				path: "receiver",
-				select: "name avatar",
-			},
-		});
+	}).select("_id");
 
 	if (!conversation) {
 		conversation = await Conversation.create({
 			participants: [user1Id, user2Id],
 		});
-	}
 
-	conversation = await conversation.populate({
-		path: "lastMessage",
-		populate: {
-			path: "sender",
-			select: "name avatar",
-		},
-	});
-	conversation = await conversation.populate({
-		path: "lastMessage",
-		populate: {
-			path: "receiver",
-			select: "name avatar",
-		},
-	});
+		conversation = await Conversation.findById(conversation._id).select("_id");
+	}
 
 	return conversation;
 };
@@ -59,19 +31,19 @@ export const getConversations = async (userId: string) => {
 	return await Conversation.find({
 		participants: userId,
 	})
-		.populate("participants", "name email role avatar")
+		.populate("participants", "name email role avatar _id")
 		.populate({
 			path: "lastMessage",
 			populate: {
 				path: "sender",
-				select: "name avatar",
+				select: "name avatar _id",
 			},
 		})
 		.populate({
 			path: "lastMessage",
 			populate: {
 				path: "receiver",
-				select: "name avatar",
+				select: "name avatar _id",
 			},
 		})
 		.sort({ updatedAt: -1 });

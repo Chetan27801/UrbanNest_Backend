@@ -32,12 +32,16 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 	socket.join(user._id);
 
 	// Handle manual room joining
-	socket.on("joinRoom", (data: JoinRoomData) => {
-		const { userId } = data.data;
+	socket.on("joinRoom", (data: any) => {
+		console.log("📥 Received joinRoom event:", data);
+
+		// Handle both old and new data structures
+		const userId = data?.data?.userId || data?.userId || data;
+
 		// Verify user can only join their own room for security
 		if (userId === user._id) {
 			socket.join(userId);
-			console.log(`User ${user._id} joined room ${userId}`);
+			console.log(`✅ User ${user._id} joined room ${userId}`);
 
 			// Notify user they're connected
 			socket.emit("connected", {
@@ -46,6 +50,9 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 				socketId: socket.id,
 			});
 		} else {
+			console.log(
+				`❌ Unauthorized room join attempt: ${userId} !== ${user._id}`
+			);
 			socket.emit("error", {
 				message: "Cannot join another user's room",
 				code: "UNAUTHORIZED_ROOM_JOIN",
@@ -56,7 +63,11 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 	// Handle real-time message sending
 	socket.on("sendMessage", async (data) => {
 		try {
-			const { conversationId, sender, receiver, content } = data.data;
+			console.log("📥 Received sendMessage event:", data);
+
+			// Handle both old and new data structures
+			const messageData = data.data || data;
+			const { conversationId, sender, receiver, content } = messageData;
 
 			// Verify sender matches authenticated user
 			if (sender !== user._id) {
