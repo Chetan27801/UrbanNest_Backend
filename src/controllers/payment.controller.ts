@@ -67,8 +67,8 @@ export const createPaymentOrder = async (
 			amount: payment.amountDue,
 			currency: process.env.PAYPAL_CURRENCY || "USD",
 			description: description,
-			returnUrl: `${process.env.FRONTEND_URL}payment/success?paymentId=${paymentId}&t=${timestamp}`,
-			cancelUrl: `${process.env.FRONTEND_URL}payment/cancel?paymentId=${paymentId}&t=${timestamp}`,
+			returnUrl: `${process.env.CLIENT_URL}/payment/success?paymentId=${paymentId}&t=${timestamp}`,
+			cancelUrl: `${process.env.CLIENT_URL}/payment/cancel?paymentId=${paymentId}&t=${timestamp}`,
 		});
 
 		payment.paypalOrderId = paypalOrder.result.id;
