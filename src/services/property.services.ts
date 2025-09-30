@@ -248,6 +248,27 @@ export const searchProperty = async (filters: SearchPropertyType) => {
 		Property.countDocuments(query),
 	]);
 
+	// Refresh URLs for all properties
+	for (const property of properties) {
+		if (property.photoUrls && property.photoUrls.length > 0) {
+			const freshUrls = await MediaService.refreshUrls(property.photoUrls);
+			await Property.findByIdAndUpdate(property._id, { photoUrls: freshUrls });
+			property.photoUrls = freshUrls;
+		}
+
+		// Refresh landlord avatar if exists
+		if (property.landlord && (property.landlord as any).avatar) {
+			const landlordAvatar = (property.landlord as any).avatar;
+			const freshAvatarUrls = await MediaService.refreshUrls([landlordAvatar]);
+
+			const User = require("../models/User.model").default;
+			await User.findByIdAndUpdate((property.landlord as any)._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			(property.landlord as any).avatar = freshAvatarUrls[0];
+		}
+	}
+
 	return {
 		properties,
 		pagination: {

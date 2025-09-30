@@ -56,8 +56,6 @@ const updateProfile = async (
 			}
 			data.avatar = await MediaService.getMediaUrl(avatarKey);
 		}
-
-		console.log(data);
 		const updatedUser = await updateUserById(id, data);
 
 		return res.status(200).json({

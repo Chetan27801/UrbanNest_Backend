@@ -5,6 +5,7 @@ import Property from "../models/Property.model";
 import User from "../models/User.model";
 import { ApplicationStatus, getEnumValues, PropertyType } from "../types/enums";
 import { Types } from "mongoose";
+import { MediaService } from "../utils/media";
 
 const adminStatsOverview = async () => {
 	const [
@@ -38,6 +39,17 @@ const getAllUsers = async (skip: number, limit: number) => {
 			.select("name email role createdAt avatar"),
 		User.countDocuments(),
 	]);
+
+	// Refresh avatars for all users
+	for (const user of users) {
+		if (user.avatar) {
+			const freshAvatarUrls = await MediaService.refreshUrls([user.avatar]);
+			await User.findByIdAndUpdate(user._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			user.avatar = freshAvatarUrls[0];
+		}
+	}
 
 	return { users, totalCount };
 };
@@ -125,6 +137,17 @@ const getPropertyDataForHome = async (type: string) => {
 		.select(
 			"name pricePerMonth photoUrls propertyType averageRating numberOfReviews isAvailable location"
 		);
+
+	// Refresh URLs for home page properties
+	for (const property of properties) {
+		if (property.photoUrls && property.photoUrls.length > 0) {
+			const freshUrls = await MediaService.refreshUrls(property.photoUrls);
+			await Property.findByIdAndUpdate(property._id, {
+				photoUrls: freshUrls,
+			});
+			property.photoUrls = freshUrls;
+		}
+	}
 
 	const totalProperties = await Property.countDocuments();
 	const totalAvailableProperties = await Property.countDocuments({

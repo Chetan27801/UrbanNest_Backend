@@ -45,6 +45,34 @@ const getFavoriteProperties = async (
 		.limit(limit);
 
 	const properties = data?.favoriteProperties;
+
+	// Refresh URLs for all favorite properties
+	if (properties && properties.length > 0) {
+		const Property = require("../models/Property.model").default;
+		for (const property of properties as any[]) {
+			if (property.photoUrls && property.photoUrls.length > 0) {
+				const freshUrls = await MediaService.refreshUrls(property.photoUrls);
+				await Property.findByIdAndUpdate(property._id, {
+					photoUrls: freshUrls,
+				});
+				property.photoUrls = freshUrls;
+			}
+
+			// Refresh landlord avatar if exists
+			if (property.landlord && property.landlord.avatar) {
+				const landlordAvatar = property.landlord.avatar;
+				const freshAvatarUrls = await MediaService.refreshUrls([
+					landlordAvatar,
+				]);
+
+				await User.findByIdAndUpdate(property.landlord._id, {
+					avatar: freshAvatarUrls[0],
+				});
+				property.landlord.avatar = freshAvatarUrls[0];
+			}
+		}
+	}
+
 	const total = properties?.length || 0;
 
 	return {

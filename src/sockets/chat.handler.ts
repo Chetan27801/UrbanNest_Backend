@@ -33,15 +33,12 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 
 	// Handle manual room joining
 	socket.on("joinRoom", (data: any) => {
-		console.log("📥 Received joinRoom event:", data);
-
 		// Handle both old and new data structures
 		const userId = data?.data?.userId || data?.userId || data;
 
 		// Verify user can only join their own room for security
 		if (userId === user._id) {
 			socket.join(userId);
-			console.log(`✅ User ${user._id} joined room ${userId}`);
 
 			// Notify user they're connected
 			socket.emit("connected", {
@@ -50,9 +47,6 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 				socketId: socket.id,
 			});
 		} else {
-			console.log(
-				`❌ Unauthorized room join attempt: ${userId} !== ${user._id}`
-			);
 			socket.emit("error", {
 				message: "Cannot join another user's room",
 				code: "UNAUTHORIZED_ROOM_JOIN",
@@ -63,8 +57,6 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 	// Handle real-time message sending
 	socket.on("sendMessage", async (data) => {
 		try {
-			console.log("📥 Received sendMessage event:", data);
-
 			// Handle both old and new data structures
 			const messageData = data.data || data;
 			const { conversationId, sender, receiver, content } = messageData;
@@ -77,14 +69,6 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 				});
 				return;
 			}
-
-			console.log("🚀 Socket.IO: Sending message:", {
-				conversationId,
-				sender,
-				receiver,
-				content: content.substring(0, 50) + "...",
-				timestamp: new Date().toISOString(),
-			});
 
 			// Use optimized shared service
 			const result = await createAndBroadcastMessage(
@@ -100,8 +84,6 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 					socketId: socket.id,
 				}
 			);
-
-			console.log("✅ Socket.IO: Message sent successfully");
 
 			// Send acknowledgment to sender
 			socket.emit("messageAck", {
@@ -158,20 +140,12 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 				return;
 			}
 
-			console.log("🚀 Socket.IO: Marking messages as read:", {
-				conversationId,
-				userId: user._id,
-				timestamp: new Date().toISOString(),
-			});
-
 			// Use optimized shared service
 			const result = await markAsReadAndBroadcast(conversationId, user._id, {
 				emitRealTime: true,
 				source: BroadcastType.SocketIO,
 				socketId: socket.id,
 			});
-
-			console.log("✅ Socket.IO: Messages marked as read successfully");
 
 			// Send acknowledgment to sender
 			socket.emit("markAsReadAck", {
@@ -209,10 +183,6 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 
 	// Handle user disconnect
 	socket.on("disconnect", (reason) => {
-		console.log(
-			`User disconnected: ${user._id} (${socket.id}) - Reason: ${reason}`
-		);
-
 		// Notify other users that this user went offline
 		socket.broadcast.emit("userStatusUpdate", {
 			userId: user._id,
@@ -223,6 +193,10 @@ export const setupChatHandlers = (io: Server, socket: Socket, user: IUser) => {
 
 	// Handle connection errors
 	socket.on("connect_error", (error) => {
+		socket.emit("error", {
+			message: "Connection error",
+			code: "CONNECTION_ERROR",
+		});
 		console.error("Connection error for user:", user._id, error);
 	});
 };

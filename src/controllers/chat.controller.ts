@@ -99,14 +99,6 @@ export const sendMessage = async (
 			);
 		}
 
-		console.log("🌐 REST API: Sending message:", {
-			conversationId,
-			sender: user._id,
-			receiver: receiverId,
-			content: content.substring(0, 50) + "...",
-			timestamp: new Date().toISOString(),
-		});
-
 		// Use optimized shared service
 		const result = await createAndBroadcastMessage(
 			{
@@ -121,7 +113,6 @@ export const sendMessage = async (
 			}
 		);
 
-		console.log("✅ REST API: Message sent successfully");
 
 		res.status(201).json({
 			success: true,
@@ -196,19 +187,11 @@ export const markMessageAsRead = async (
 			return next(createError("You are not a part of this conversation", 403));
 		}
 
-		console.log("🌐 REST API: Marking messages as read:", {
-			conversationId,
-			userId: user._id,
-			timestamp: new Date().toISOString(),
-		});
-
 		// Use optimized shared service
 		const result = await markAsReadAndBroadcast(conversationId, user._id, {
 			emitRealTime: true,
 			source: BroadcastType.REST,
 		});
-
-		console.log("✅ REST API: Messages marked as read successfully");
 
 		res.status(200).json({
 			success: true,

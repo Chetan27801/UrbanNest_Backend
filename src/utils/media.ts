@@ -106,7 +106,6 @@ export class MediaService {
 	) {
 		const fileExtension = path.extname(fileName || "");
 		const uniqueFileName = `${uuidv4()}${fileExtension}`;
-		console.log("uniqueFileName: ", uniqueFileName);
 		const key = subfolder
 			? `${folder}/${subfolder}/${uniqueFileName}`
 			: `${folder}/${uniqueFileName}`;

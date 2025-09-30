@@ -100,10 +100,6 @@ export const capturePaymentOrder = async (
 ) => {
 	try {
 		const { paymentId, orderId } = req.body;
-		console.log("=====================================");
-		console.log(paymentId, orderId);
-		console.log("=====================================");
-
 		//get payment details
 		const payment = await getPaymentByIdService(paymentId);
 		if (!payment) {
@@ -126,10 +122,6 @@ export const capturePaymentOrder = async (
 		//capture payment
 		const capture = await capturePayPalOrder(orderId);
 
-		console.log("=====================================");
-		console.log("PayPal Capture Response:", capture);
-		console.log("=====================================");
-
 		// Extract payment details from PayPal response
 		const captureDetails =
 			capture.result.purchaseUnits?.[0]?.payments?.captures?.[0];
@@ -146,9 +138,6 @@ export const capturePaymentOrder = async (
 		payment.payPalPayerEmail = capture.result.payer?.emailAddress;
 		await payment.save();
 
-		console.log("=====================================");
-		console.log(payment);
-		console.log("=====================================");
 
 		return res.status(200).json({
 			success: true,
@@ -157,10 +146,6 @@ export const capturePaymentOrder = async (
 			capture,
 		});
 	} catch (error: any) {
-		console.log("===!!!!!!!!!!!!!!!!!!!!!!!!!");
-		console.error("PayPal Capture Order Error:", error);
-		console.log("===!!!!!!!!!!!!!!!!!!!!!!!!!");
-
 		// Handle specific PayPal errors
 		if (
 			error.statusCode === 422 &&

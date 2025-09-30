@@ -140,7 +140,6 @@ export const updateApplication = async (
 ) => {
 	const { id } = req.params;
 	const { status, leaseDetails } = req.body;
-	console.log(req.body);
 	const user = req.user as IUser;
 	// Validate status value
 	if (!Object.values(ApplicationStatus).includes(status)) {
@@ -178,7 +177,6 @@ export const updateApplication = async (
 			}
 
 			await updateAllApplicationService(id, propertyId, session); //update all applications status to rejected except the current one
-			console.log("all applications updated");
 			//update property status to unavailable
 			await updatePropertyService(
 				{ _id: propertyId },
@@ -201,8 +199,6 @@ export const updateApplication = async (
 			application.lease = new mongoose.Types.ObjectId(lease._id);
 			await application.save({ session });
 		}
-
-		console.log("application updated");
 
 		await session.commitTransaction();
 		await session.endSession();

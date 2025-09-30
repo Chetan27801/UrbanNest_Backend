@@ -3,6 +3,7 @@ import Message from "../models/Message.model";
 import { IMessage, IMessageInput } from "../types/chat.types";
 import { getSocketInstance } from "../sockets/index";
 import { BroadcastStatus, BroadcastType } from "../types/enums";
+import { MediaService } from "../utils/media";
 
 //get or create conversation between two users
 export const getOrCreateConversation = async (
@@ -28,7 +29,7 @@ export const getOrCreateConversation = async (
 
 //get all conversations for a user
 export const getConversations = async (userId: string) => {
-	return await Conversation.find({
+	const conversations = await Conversation.find({
 		participants: userId,
 	})
 		.populate("participants", "name email role avatar _id")
@@ -47,6 +48,49 @@ export const getConversations = async (userId: string) => {
 			},
 		})
 		.sort({ updatedAt: -1 });
+
+	// Refresh avatars for all conversations
+	const User = require("../models/User.model").default;
+	for (const conversation of conversations) {
+		// Refresh participant avatars
+		if (conversation.participants && conversation.participants.length > 0) {
+			for (const participant of conversation.participants) {
+				if ((participant as any).avatar) {
+					const avatar = (participant as any).avatar;
+					const freshAvatarUrls = await MediaService.refreshUrls([avatar]);
+					await User.findByIdAndUpdate((participant as any)._id, {
+						avatar: freshAvatarUrls[0],
+					});
+					(participant as any).avatar = freshAvatarUrls[0];
+				}
+			}
+		}
+
+		// Refresh lastMessage sender/receiver avatars
+		if (conversation.lastMessage) {
+			const lastMsg = conversation.lastMessage as any;
+			if (lastMsg.sender && lastMsg.sender.avatar) {
+				const freshAvatarUrls = await MediaService.refreshUrls([
+					lastMsg.sender.avatar,
+				]);
+				await User.findByIdAndUpdate(lastMsg.sender._id, {
+					avatar: freshAvatarUrls[0],
+				});
+				lastMsg.sender.avatar = freshAvatarUrls[0];
+			}
+			if (lastMsg.receiver && lastMsg.receiver.avatar) {
+				const freshAvatarUrls = await MediaService.refreshUrls([
+					lastMsg.receiver.avatar,
+				]);
+				await User.findByIdAndUpdate(lastMsg.receiver._id, {
+					avatar: freshAvatarUrls[0],
+				});
+				lastMsg.receiver.avatar = freshAvatarUrls[0];
+			}
+		}
+	}
+
+	return conversations;
 };
 
 ///create a new message
@@ -118,13 +162,6 @@ export const createAndBroadcastMessage = async (
 				io.to(messageData.sender)
 					.to(messageData.receiver)
 					.emit("newMessage", broadcastData);
-
-				console.log(`📡 Real-time message broadcast successful (${source})`, {
-					messageId: message._id,
-					from: messageData.sender,
-					to: messageData.receiver,
-					conversationId: messageData.conversationId,
-				});
 			} catch (socketError) {
 				console.warn("❌ Socket.IO broadcast failed:", socketError);
 				// Don't throw error - message was still saved to database
@@ -160,6 +197,30 @@ export const getMessages = async (
 		.sort({ createdAt: -1 })
 		.skip(skip)
 		.limit(limit);
+
+	// Refresh avatars for all messages
+	const User = require("../models/User.model").default;
+	for (const message of messages) {
+		// Refresh sender avatar
+		if ((message.sender as any)?.avatar) {
+			const senderAvatar = (message.sender as any).avatar;
+			const freshAvatarUrls = await MediaService.refreshUrls([senderAvatar]);
+			await User.findByIdAndUpdate((message.sender as any)._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			(message.sender as any).avatar = freshAvatarUrls[0];
+		}
+
+		// Refresh receiver avatar
+		if ((message.receiver as any)?.avatar) {
+			const receiverAvatar = (message.receiver as any).avatar;
+			const freshAvatarUrls = await MediaService.refreshUrls([receiverAvatar]);
+			await User.findByIdAndUpdate((message.receiver as any)._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			(message.receiver as any).avatar = freshAvatarUrls[0];
+		}
+	}
 
 	// Transform _id to id for frontend compatibility
 	const transformedMessages = messages.map((message) => {
@@ -266,12 +327,6 @@ export const markAsReadAndBroadcast = async (
 					timestamp: new Date().toISOString(),
 					source,
 					readCount: result.modifiedCount, // How many messages were marked as read
-				});
-
-				console.log(`📖 Read status broadcast successful (${source})`, {
-					conversationId,
-					readBy: userId,
-					messagesMarked: result.modifiedCount,
 				});
 			} catch (socketError) {
 				console.warn("❌ Read status broadcast failed:", socketError);

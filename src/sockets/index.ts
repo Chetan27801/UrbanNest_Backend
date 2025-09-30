@@ -25,13 +25,10 @@ export const initializeSocketServer = (server: HTTPServer) => {
 			return socket.disconnect();
 		}
 
-		console.log(`New User connected: ${user._id}`, socket.id);
 
 		// Setup chat handlers
 		setupChatHandlers(io, socket, user);
 	});
-
-	console.log("Socket.IO server initialized");
 	return io;
 };
 

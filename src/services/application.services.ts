@@ -1,6 +1,7 @@
 import Application from "../models/Application.model";
 import { ApplicationStatus } from "../types/enums";
 import Property from "../models/Property.model";
+import { MediaService } from "../utils/media";
 
 export const createApplication = async (applicationData: any) => {
 	const newApplication = await Application.create(applicationData);
@@ -30,6 +31,20 @@ export const getAllApplications = async (
 		.sort({ createdAt: -1 })
 		.skip(skip)
 		.limit(limit);
+
+	// Refresh URLs for all applications
+	for (const application of applications) {
+		if (application.property && (application.property as any).photoUrls) {
+			const photoUrls = (application.property as any).photoUrls;
+			if (photoUrls && photoUrls.length > 0) {
+				const freshUrls = await MediaService.refreshUrls(photoUrls);
+				await Property.findByIdAndUpdate((application.property as any)._id, {
+					photoUrls: freshUrls,
+				});
+				(application.property as any).photoUrls = freshUrls;
+			}
+		}
+	}
 
 	const totalApplications = await Application.countDocuments(query);
 
@@ -116,6 +131,46 @@ export const getAllApplicationsByLandlord = async (
 			property: { $in: propertyIds },
 			status: status,
 		});
+	}
+
+	// Refresh URLs for all applications
+	const User = require("../models/User.model").default;
+	for (const application of allApplications) {
+		// Refresh property URLs
+		if (application.property && (application.property as any).photoUrls) {
+			const photoUrls = (application.property as any).photoUrls;
+			if (photoUrls && photoUrls.length > 0) {
+				const freshUrls = await MediaService.refreshUrls(photoUrls);
+				await Property.findByIdAndUpdate((application.property as any)._id, {
+					photoUrls: freshUrls,
+				});
+				(application.property as any).photoUrls = freshUrls;
+			}
+		}
+
+		// Refresh tenant avatar
+		if (application.tenant && (application.tenant as any).avatar) {
+			const tenantAvatar = (application.tenant as any).avatar;
+			const freshAvatarUrls = await MediaService.refreshUrls([tenantAvatar]);
+			await User.findByIdAndUpdate((application.tenant as any)._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			(application.tenant as any).avatar = freshAvatarUrls[0];
+		}
+
+		// Refresh landlord avatar
+		if (
+			application.property &&
+			(application.property as any).landlord &&
+			(application.property as any).landlord.avatar
+		) {
+			const landlordAvatar = (application.property as any).landlord.avatar;
+			const freshAvatarUrls = await MediaService.refreshUrls([landlordAvatar]);
+			await User.findByIdAndUpdate((application.property as any).landlord._id, {
+				avatar: freshAvatarUrls[0],
+			});
+			(application.property as any).landlord.avatar = freshAvatarUrls[0];
+		}
 	}
 
 	return {

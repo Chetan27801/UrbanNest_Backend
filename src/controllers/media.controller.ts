@@ -49,7 +49,6 @@ export const getMediaUrl = async (
 
 		// Decode the URL-encoded key
 		const decodedKey = decodeURIComponent(key);
-		console.log("Getting media URL for key:", decodedKey);
 
 		const url = await MediaService.getMediaUrl(decodedKey);
 
